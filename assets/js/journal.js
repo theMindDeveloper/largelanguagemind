@@ -281,7 +281,7 @@
       for (var i = 0; i < heads.length; i++) if (heads[i].getBoundingClientRect().top < 180) act = heads[i].id;
       buttons.forEach(function (b) { b.setAttribute('aria-current', b.getAttribute('data-target') === act ? 'true' : 'false'); });
       var max = document.documentElement.scrollHeight - window.innerHeight;
-      if (bar) bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0) + '%';
+      if (bar) bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0) + ')';
     }
     window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
     onScroll();
@@ -315,7 +315,8 @@
     if (prose) {
       var lastW = window.innerWidth, rt = 0;
       window.addEventListener('resize', function () {
-        if (Math.abs(window.innerWidth - lastW) < 20 && readMode() === 'columns') return;
+        // phones resize the viewport height while scrolling (address bar); only width matters here
+        if (Math.abs(window.innerWidth - lastW) < 20) return;
         lastW = window.innerWidth; clearTimeout(rt); rt = setTimeout(layoutNews, 250);
       });
       layoutNews();

@@ -187,7 +187,13 @@ button { font: inherit; color: inherit; }
 .site-footer a { text-decoration: underline; text-underline-offset: calc(3 * var(--u)); }
 
 /* ---------- article ---------- */
-.note-header { position: sticky; top: 0; z-index: 10; background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg); border-bottom: 1px solid var(--line); }
+.note-header { position: sticky; top: 0; z-index: 10; background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg); border-bottom: 1px solid var(--line);
+  /* own compositor layer: iOS Safari otherwise repositions the sticky bar a frame late while
+     the address bar collapses, which makes it jump */
+  transform: translateZ(0); -webkit-transform: translateZ(0); }
+/* the same paper continues above the bar, so no strip of page shows through during the
+   address-bar animation or overscroll */
+.note-header::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 120px; background: inherit; }
 .note-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(8 * var(--u)) calc(32 * var(--u)); padding: calc(10 * var(--u)) var(--gutter); }
 .wordmark { display: flex; align-items: center; gap: calc(10 * var(--u)); white-space: nowrap; color: var(--ink); }
 .wordmark canvas { display: block; width: calc(34 * var(--u)); height: calc(34 * var(--u)); }
@@ -197,7 +203,7 @@ button { font: inherit; color: inherit; }
 .note-header .theme-toggle, .note-header .read-toggle { font-size: calc(13 * var(--u)); }
 .read-toggle { background: none; border: 0; padding: 0; cursor: pointer; white-space: nowrap; font-family: var(--hand); line-height: 1.8; color: var(--muted); }
 .read-toggle:hover { color: var(--accent); }
-.progress { height: 2px; width: 0; background: var(--accent); }
+.progress { height: 2px; width: 100%; background: var(--accent); transform: scaleX(0); transform-origin: 0 50%; }
 
 .note-page { --u: clamp(1px, calc(100vw / 1700), 1.12px); }
 .note-grid { display: flex; flex-wrap: wrap; gap: calc(48 * var(--u)) calc(64 * var(--u)); max-width: calc(1240 * var(--u)); margin: 0 auto; padding: 0 var(--gutter) calc(140 * var(--u)); }
