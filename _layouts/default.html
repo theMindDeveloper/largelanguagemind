@@ -1,3 +1,4 @@
+{%- assign v = site.time | date: '%s' -%}
 <!DOCTYPE html>
 <html lang="{{ site.lang | default: 'en' }}" data-theme="paper">
 <head>
@@ -22,12 +23,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..600;1,400..600&family=Instrument+Serif:ital@0;1&family=Homemade+Apple&display=swap">
-  <link rel="stylesheet" href="{{ '/assets/css/journal.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/journal.css' | relative_url }}?v={{ v }}">
   {% if page.layout == 'note' and page.math != false %}{% include mathjax.html %}{% endif %}
 </head>
 <body>
 {{ content }}
-<script src="{{ '/assets/js/neural-engine.js' | relative_url }}"></script>
-<script src="{{ '/assets/js/journal.js' | relative_url }}"></script>
+<script src="{{ '/assets/js/neural-engine.js' | relative_url }}?v={{ v }}"></script>
+<script src="{{ '/assets/js/journal.js' | relative_url }}?v={{ v }}"></script>
 </body>
 </html>
