@@ -190,13 +190,10 @@ button { font: inherit; color: inherit; }
 .site-footer a { text-decoration: underline; text-underline-offset: calc(3 * var(--u)); }
 
 /* ---------- article ---------- */
-.note-header { position: sticky; top: 0; z-index: 10; background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg); border-bottom: 1px solid var(--line);
-  /* own compositor layer: iOS Safari otherwise repositions the sticky bar a frame late while
-     the address bar collapses, which makes it jump */
-  transform: translateZ(0); -webkit-transform: translateZ(0); }
-/* the same paper continues above the bar, so no strip of page shows through during the
-   address-bar animation or overscroll */
-.note-header::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 120px; background: inherit; }
+/* fixed, not sticky: Safari drags a sticky bar that sits inside a clipping container while
+   the address bar animates. The page reserves the bar's height (measured by journal.js). */
+.note-header { position: fixed; top: 0; left: 0; right: 0; z-index: 10; background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg); border-bottom: 1px solid var(--line); }
+.note-page { padding-top: var(--note-hdr, calc(55 * var(--u))); }
 .note-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(8 * var(--u)) calc(32 * var(--u)); padding: calc(10 * var(--u)) var(--gutter); }
 .wordmark { display: flex; align-items: center; gap: calc(10 * var(--u)); white-space: nowrap; color: var(--ink); }
 .wordmark canvas { display: block; width: calc(34 * var(--u)); height: calc(34 * var(--u)); }
@@ -378,7 +375,8 @@ button { font: inherit; color: inherit; }
   .hero-intro { width: auto; }
   .band, .band-notes { padding-top: calc(72 * var(--u)); padding-bottom: calc(72 * var(--u)); }
   .band-head h2 { font-size: calc(42 * var(--u)); }
-  .note-header-row { padding: calc(10 * var(--u)) var(--gutter); }
+  .note-header-row { padding: 6px var(--gutter) 5px; row-gap: 0; }
+  .note-page { padding-top: var(--note-hdr, 78px); }
   .wordmark span { font-size: calc(24 * var(--u)); }
   .prose { font-size: calc(19 * var(--u)); }
   [data-read="columns"] .prose .chunk-cols { text-align: left; hyphens: manual; }

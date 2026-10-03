@@ -310,6 +310,15 @@
       });
     });
 
+    // the article header is fixed; reserve exactly its height at the top of the page
+    var hdr = document.querySelector('.note-header');
+    if (hdr) {
+      var fitHeader = function () { root.style.setProperty('--note-hdr', hdr.offsetHeight + 'px'); };
+      fitHeader();
+      if (window.ResizeObserver) new ResizeObserver(fitHeader).observe(hdr);
+      else window.addEventListener('resize', fitHeader);
+    }
+
     var prose = document.querySelector('.prose');
     if (prose) prepareArticle(prose);
     if (prose) {
