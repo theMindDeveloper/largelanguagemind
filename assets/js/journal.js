@@ -110,6 +110,44 @@
   }
 
   // ---------- article: book view or newspaper view ----------
+  // Newspaper view: the text between headings / figures / tables / quotes becomes .chunk
+  // blocks. Short blocks stay one column; longer ones get two columns and are cut at
+  // paragraph boundaries so no block is taller than ~3/4 of the screen.
+  var BREAKS = { H1: 1, H2: 1, H3: 1, FIGURE: 1, BLOCKQUOTE: 1, PRE: 1, HR: 1, TABLE: 1 };
+  function unwrapNews(prose) {
+    $$('.chunk', prose).forEach(function (c) { while (c.firstChild) prose.insertBefore(c.firstChild, c); c.remove(); });
+  }
+  function splitTall(chunk) {
+    var maxH = Math.max(380, window.innerHeight * 0.74);
+    if (chunk.offsetHeight <= maxH || chunk.children.length < 2) return;
+    var next = document.createElement('div');
+    next.className = 'chunk chunk-cols chunk-cont';
+    chunk.parentNode.insertBefore(next, chunk.nextSibling);
+    while (chunk.offsetHeight > maxH && chunk.children.length > 1) next.insertBefore(chunk.lastElementChild, next.firstChild);
+    if (next.children.length) splitTall(next); else next.remove();
+  }
+  function layoutNews() {
+    var prose = document.querySelector('.prose');
+    if (!prose) return;
+    unwrapNews(prose);
+    if (readMode() !== 'columns') return;
+    var groups = [], cur = [];
+    Array.prototype.slice.call(prose.children).forEach(function (el) {
+      var brk = BREAKS[el.nodeName] || el.classList.contains('table-wrap');
+      if (brk) { if (cur.length) groups.push(cur); cur = []; } else cur.push(el);
+    });
+    if (cur.length) groups.push(cur);
+    var twoCols = window.innerWidth >= 900;
+    groups.forEach(function (g) {
+      var len = g.reduce(function (n, el) { return n + el.textContent.length; }, 0);
+      var chunk = document.createElement('div');
+      chunk.className = 'chunk ' + (twoCols && len >= 700 ? 'chunk-cols' : 'chunk-single');
+      prose.insertBefore(chunk, g[0]);
+      g.forEach(function (el) { chunk.appendChild(el); });
+      if (chunk.classList.contains('chunk-cols')) splitTall(chunk);
+    });
+  }
+
   function readMode() { return root.getAttribute('data-read') === 'columns' ? 'columns' : 'book'; }
   function setRead(mode, keepPlace) {
     // keep the reader on the same heading when the layout reflows
@@ -120,6 +158,7 @@
       if (anchor) offset = anchor.getBoundingClientRect().top;
     }
     if (mode === 'columns') root.setAttribute('data-read', 'columns'); else root.removeAttribute('data-read');
+    layoutNews();
     try { localStorage.setItem('llm-read', mode); } catch (e) { /* private mode */ }
     $$('.read-toggle').forEach(function (b) {
       b.textContent = mode === 'columns' ? 'book view' : 'newspaper view';
@@ -273,6 +312,19 @@
 
     var prose = document.querySelector('.prose');
     if (prose) prepareArticle(prose);
+    if (prose) {
+      var lastW = window.innerWidth, rt = 0;
+      window.addEventListener('resize', function () {
+        if (Math.abs(window.innerWidth - lastW) < 20 && readMode() === 'columns') return;
+        lastW = window.innerWidth; clearTimeout(rt); rt = setTimeout(layoutNews, 250);
+      });
+      layoutNews();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutNews);
+      // MathJax changes line heights once it has typeset the formulas
+      window.addEventListener('load', function () {
+        if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(layoutNews);
+      });
+    }
 
     function start() {
       if (!E()) return setTimeout(start, 50);

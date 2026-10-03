@@ -125,6 +125,7 @@ Through this reading, I realized we have **three different kinds of neurons**:
 This helped me clarify something fundamental:
 > Deep learning is not biologically inspired at the hardware level.  
 > It only borrows the *math* of neurons, not the *physics*.
+
 Neuromorphic computing tries to bring hardware closer to the physics of the brain.  
 It is extremely energy-efficient — just like biological neural tissue — while von Neumann architecture has proven itself as a flexible and general-purpose computing model.
 But for achieving highly efficient, brain-like intelligence without massive data centers, a neuroplastic, spike-based hardware architecture seems like the natural future of AI.
