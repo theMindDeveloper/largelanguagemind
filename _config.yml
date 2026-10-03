@@ -8,12 +8,12 @@ description: >-
 theme: jekyll-theme-minimal
 
 # GitHub Pages base URL
-url: "https://theminddeveloper.github.io"
-baseurl: "/LargeLanguageMind"
+url: "https://theminddev.com"
+baseurl: "/largelanguagemind"
 
 github:
   is_project_page: true
-  repository_url: https://github.com/theMindDeveloper/LargeLanguageMind
+  repository_url: https://github.com/theMindDeveloper/largelanguagemind
 
 markdown: kramdown
 kramdown:
