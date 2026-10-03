@@ -41,6 +41,9 @@
 }
 
 html, body { margin: 0; }
+/* no visible scrollbars anywhere; wheel, touchpad, touch and keys still scroll */
+html, * { scrollbar-width: none; -ms-overflow-style: none; }
+::-webkit-scrollbar { display: none; width: 0; height: 0; }
 html { background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg); }
 body {
   background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg);
