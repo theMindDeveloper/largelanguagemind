@@ -31,7 +31,7 @@
     hero = E().mountHero(el, {
       theme: theme(),
       variant: +el.getAttribute('data-variant') || 0,
-      speed: 0.7,
+      speed: 0.85,
       ambient: 8,
       onPhase: function (p) { if (beats) beats.setAttribute('data-phase', p); }
     });

@@ -57,7 +57,7 @@
       const pts = [[sx, sy]], cd = [d0], ws = [w0];
       let a = ang, x = sx, y = sy, d = 0, h = ang;
       for (let i = 1; i <= n; i++) {
-        d += st; const t = d / len;
+        d += st; const t = Math.min(1, d / len); // n steps can overshoot len by up to half a step
         a += bend * st + nz(x * 0.007 / s + 11, y * 0.007 / s) * 0.018;
         if (q.home != null) a += angDiff(a, q.home) * 0.02;
         const ease = Math.min(1, d / (10 * s));
@@ -324,7 +324,7 @@
     let speed = opts.speed == null ? 0.7 : opts.speed, ambientN = opts.ambient == null ? 8 : opts.ambient;
     let A, B, cacheA, cacheB, bg, amb = [], pulses = [], hover = null, reach = null;
     const grow = { g: 0, target: 0 }, syn = { w: 0, flash: 0, p: [0, 0], formed: false };
-    const INTRO = 2.6, L = 17;
+    const INTRO = 2.6, L = 12;
 
     function build() {
       useTheme(theme);
@@ -332,10 +332,28 @@
       // 1.5x is indistinguishable for soft ink lines and saves ~45% of the pixels on 2x screens
       dpr = Math.min(1.5, window.devicePixelRatio || 1); canvas.width = W * dpr; canvas.height = H * dpr;
       if (under) { under.width = canvas.width; under.height = canvas.height; staticAlpha = -1; }
-      const sc = clamp(Math.min(W / 1180, H / 760), 0.72, 1.3) * 1.45;
       const nar = clamp((1500 - W) / 600, 0, 1);
-      const pa = [(LAYOUT.a.fx + nar * 0.15) * W, LAYOUT.a.fy * H], pb = [(LAYOUT.b.fx + nar * 0.05) * W, LAYOUT.b.fy * H];
       const HV = HERO_VARIANTS[clamp((opts.variant | 0), 0, HERO_VARIANTS.length - 1)];
+      let sc, pa, pb;
+      if (W < 700) {
+        // phones: the pair stands to the right of the title, one above the other
+        sc = clamp(W / 640, 0.45, 0.95);
+        pa = [0.64 * W, 0.2 * H]; pb = [0.86 * W, 0.46 * H];
+      } else {
+        // the pair is sized by the screen and kept close together, so large screens get
+        // larger cells instead of a wider gap between them
+        sc = clamp(Math.min(W / 1180, H / 700), 0.72, 1.6) * 2;
+        const cx = (0.6 + nar * 0.1) * W;
+        let sep = 92;
+        // dendrites grow before the axon from the same seed, so a quick trial growth shows
+        // exactly where the arbors land; widen the pair (then shrink it a little) until
+        // the two cells' dendrites no longer cross
+        for (let k = 0; k < 10; k++) {
+          pa = [cx - sep * sc, LAYOUT.a.fy * H]; pb = [cx + sep * sc, LAYOUT.b.fy * H];
+          if (k === 9 || !arborsTouch(pa, pb, sc, HV)) break;
+          sep *= 1.07; if (k >= 3) sc *= 0.95;
+        }
+      }
       B = growNeuron({ x: pb[0], y: pb[1], s: sc * LAYOUT.b.s, type: HV.b[0], seed: HV.b[1], axonAng: 1.25, axonLen: 300 * sc });
       // B: pick a dendrite point facing A, then a growth path from it toward A
       let best = null, bd = 1e9; const sB = B.s;
@@ -352,9 +370,11 @@
       const reachLen = Math.min(dA * 0.34, 120 * sc);
       const M = [rp[0] + (toA[0] / dA) * reachLen, rp[1] + (toA[1] / dA) * reachLen + 10 * sc];
       const rpts = steerPath(rp, M, sB, HV.b[1] + 5, 0.35), rcd = cumul(rpts), rlen = rcd[rcd.length - 1];
-      reach = { pts: rpts, cd: rcd, len: rlen, ws: rpts.map((_, i) => mix(best.sg.ws[best.k] * 0.7, 0.75 * sB, Math.pow(i / (rpts.length - 1), 0.8))) };
+      reach = { pts: rpts, cd: rcd, len: rlen, ws: rpts.map((_, i) => mix(best.sg.ws[best.k] * 0.7, 1.0 * sB, Math.pow(i / (rpts.length - 1), 0.8))) };
       syn.p = M;
-      A = growNeuron({ x: pa[0], y: pa[1], s: sc * LAYOUT.a.s, type: HV.a[0], seed: HV.a[1], goal: [M[0] - 1.2 * sc, M[1] - 1.6 * sc] });
+      // A's axon ends a hair past the tip of B's reaching dendrite, so the two visibly join
+      const dM = Math.hypot(M[0] - pa[0], M[1] - pa[1]) || 1, joinAt = [M[0] + ((M[0] - pa[0]) / dM) * 1.5 * sc, M[1] + ((M[1] - pa[1]) / dM) * 1.5 * sc];
+      A = growNeuron({ x: pa[0], y: pa[1], s: sc * LAYOUT.a.s, type: HV.a[0], seed: HV.a[1], goal: joinAt });
       cacheA = bake(A, dpr, { tint: true, skipAxon: true }); cacheB = bake(B, dpr, { tint: true });
       // ambient field: fill the space around the pair, never the text column
       const r = rng(5); amb = [];
@@ -377,6 +397,19 @@
       pulses = []; grow.g = grow.target = 0; syn.w = 0; syn.formed = false;
     }
 
+    // how many points of A's dendrites come within ~12px of B's dendrites
+    function arborsTouch(pa, pb, sc, HV) {
+      const a = growNeuron({ x: pa[0], y: pa[1], s: sc * LAYOUT.a.s, type: HV.a[0], seed: HV.a[1], axonLen: 1 });
+      const b = growNeuron({ x: pb[0], y: pb[1], s: sc * LAYOUT.b.s, type: HV.b[0], seed: HV.b[1], axonAng: 1.25, axonLen: 1 });
+      const C = 6, cells = new Set();
+      b.segs.forEach((sg) => { if (!sg.axon) sg.pts.forEach((q) => {
+        const X = (q[0] / C) | 0, Y = (q[1] / C) | 0;
+        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) cells.add((X + i) * 100003 + Y + j);
+      }); });
+      let hit = 0;
+      a.segs.forEach((sg) => { if (!sg.axon) sg.pts.forEach((q) => { if (cells.has(((q[0] / C) | 0) * 100003 + ((q[1] / C) | 0))) hit++; }); });
+      return hit;
+    }
     function input(N, n) {
       for (let i = 0; i < n; i++) {
         const path = N.tips[(Math.random() * N.tips.length) | 0]; if (!path) return; if (!path._cd) path._cd = cumul(path);
@@ -390,7 +423,7 @@
       const la = Math.max(4, aLen()), lr = Math.max(2, rLen());
       pulses.push({ pts: A.axon.pts, cd: A.axon.cd, len: la, d: 0, v: Math.max(la, 60) / 0.55, col: TH.fire, a: 0.9, w: 2 * A.s, trail: 60 * A.s, glow: 10 * A.s });
       pulses.push({ pts: reach.pts, cd: reach.cd, len: lr, d: 0, v: Math.max(lr, 30) / 0.45, col: TH.fire, a: 0.9, w: 1.6 * B.s, trail: 30 * B.s, glow: 8 * B.s,
-        done: () => { grow.target = Math.min(1, grow.target + 0.25); } });
+        done: () => { grow.target = Math.min(1, grow.target + 0.34); } });
       // ambient neighbours fire too, briefly
       pulses.push({ pts: B.axon.pts, cd: B.axon.cd, len: B.axon.len, d: 0, v: B.axon.len / 1.1, col: TH.fire, a: 0.7, w: 1.8 * B.s, trail: 60 * B.s, glow: 9 * B.s });
     }
@@ -400,9 +433,9 @@
         done: () => { syn.flash = 1; const rr = reach.pts.slice().reverse(), rc = cumul(rr); pulses.push({ pts: rr, cd: rc, len: rc[rc.length - 1], d: 0, v: rc[rc.length - 1] / 0.25, col: TH.fire, a: 0.9, w: 1.6 * B.s, trail: 26 * B.s, glow: 8 * B.s, done: () => { B.act = 1; pulses.push({ pts: B.axon.pts, cd: B.axon.cd, len: B.axon.len, d: 0, v: B.axon.len / 1.1, col: TH.fire, a: 0.95, w: 2.1 * B.s, trail: 80 * B.s, glow: 11 * B.s }); } }); } });
     }
     const EV = [[0, () => setPhase(0)]];
-    [0.3, 2.6, 4.9, 7.2].forEach((t0, i) => { EV.push([t0, () => { input(A, 3); input(B, 3); }], [t0 + 0.45, () => coFire()]); if (i === 1) EV.push([t0 - 0.2, () => setPhase(1)]); });
-    EV.push([9.4, () => { syn.formed = true; syn.flash = 1; }], [10.0, () => setPhase(2)], [10.2, () => input(A, 4)], [10.7, () => fireAlone()], [13.0, () => input(A, 4)], [13.5, () => fireAlone()],
-      [15.8, () => { grow.target = 0; syn.formed = false; }]);
+    [0.3, 1.9, 3.5].forEach((t0, i) => { EV.push([t0, () => { input(A, 3); input(B, 3); }], [t0 + 0.45, () => coFire()]); if (i === 1) EV.push([t0 - 0.2, () => setPhase(1)]); });
+    EV.push([5.0, () => { syn.formed = true; syn.flash = 1; }], [5.5, () => setPhase(2)], [5.7, () => input(A, 4)], [6.2, () => fireAlone()], [8.0, () => input(A, 4)], [8.5, () => fireAlone()],
+      [10.6, () => { grow.target = 0; syn.formed = false; }]);
     function setPhase(p) { if (p !== phase) { phase = p; opts.onPhase && opts.onPhase(p); } }
     function runEvents(a, b) { for (const e of EV) if (e[0] > a && e[0] <= b) e[1](); }
 
@@ -439,7 +472,7 @@
       const P = sstep(0, INTRO, T);
       A.act *= Math.exp(-dt * 2.1); B.act *= Math.exp(-dt * 2.1);
       A.hover += ((hover === 'a' ? 1 : 0) - A.hover) * Math.min(1, rdt * 8); B.hover += ((hover === 'b' ? 1 : 0) - B.hover) * Math.min(1, rdt * 8);
-      const rate = grow.target < grow.g ? 1.2 : 1.6; grow.g += clamp(grow.target - grow.g, -rate * dt, rate * dt);
+      const rate = grow.target < grow.g ? 1.2 : 2.2; grow.g += clamp(grow.target - grow.g, -rate * dt, rate * dt);
       syn.w += ((syn.formed ? 1 : 0) - syn.w) * Math.min(1, dt * 2.5); syn.flash *= Math.exp(-dt * 3);
       if (P < 1) { drawNeuron(ctx, A, P, TH.ink, 0.9, 1, true); drawNeuron(ctx, B, sstep(0.15, 1, P), TH.ink, 0.9, 1); }
       else { drawCache(cacheA, A.act * 0.85 + A.hover * 0.3); drawCache(cacheB, B.act * 0.85 + B.hover * 0.3); }

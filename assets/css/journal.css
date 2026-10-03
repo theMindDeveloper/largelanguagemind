@@ -16,6 +16,8 @@
   --plate-bg: transparent;
   --fig-paper: transparent;
   --fig-pad: 0;
+  /* handmade-paper grain (generated, seamless 512px tile) */
+  --paper-img: url("../img/paper/paper.webp?v=3");
   --gutter: calc(48 * var(--u));
   --serif: 'EB Garamond', Georgia, serif;
   --display: 'Instrument Serif', Georgia, serif;
@@ -34,13 +36,14 @@
   --plate-bg: #000;
   --fig-paper: transparent;
   --fig-pad: 0;
+  --paper-img: url("../img/paper/night.webp?v=3");
   color-scheme: dark;
 }
 
 html, body { margin: 0; }
-html { background: var(--bg); }
+html { background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg); }
 body {
-  background: var(--bg);
+  background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg);
   color: var(--ink);
   font-family: var(--serif);
   -webkit-font-smoothing: antialiased;
@@ -184,7 +187,7 @@ button { font: inherit; color: inherit; }
 .site-footer a { text-decoration: underline; text-underline-offset: calc(3 * var(--u)); }
 
 /* ---------- article ---------- */
-.note-header { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
+.note-header { position: sticky; top: 0; z-index: 10; background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg); border-bottom: 1px solid var(--line); }
 .note-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(8 * var(--u)) calc(32 * var(--u)); padding: calc(10 * var(--u)) var(--gutter); }
 .wordmark { display: flex; align-items: center; gap: calc(10 * var(--u)); white-space: nowrap; color: var(--ink); }
 .wordmark canvas { display: block; width: calc(34 * var(--u)); height: calc(34 * var(--u)); }
@@ -264,7 +267,7 @@ button { font: inherit; color: inherit; }
 /* figure: an image paragraph followed by an italic caption becomes a plate figure (journal.js) */
 .prose figure { margin: calc(8 * var(--u)) 0 calc(36 * var(--u)); }
 .prose figure .fig-paper { background: var(--fig-paper); padding: var(--fig-pad); display: flex; justify-content: center; isolation: isolate; }
-:root:not([data-theme="night"]) .prose figure .fig-paper { background: var(--bg); }
+:root:not([data-theme="night"]) .prose figure .fig-paper { background: var(--paper-img) 0 0 / 512px 512px repeat, var(--bg); }
 .prose figcaption { display: flex; gap: calc(14 * var(--u)); align-items: baseline; padding-top: calc(12 * var(--u)); }
 .prose figcaption .fig-n { flex: none; font-family: var(--hand); font-size: calc(13 * var(--u)); line-height: 1.8; color: var(--accent); }
 .prose figcaption .fig-t { font-style: italic; font-size: calc(17 * var(--u)); line-height: 1.45; color: var(--muted); }
@@ -346,15 +349,22 @@ button { font: inherit; color: inherit; }
   :root { --gutter: 20px; --u: 1px; --hs: 1px; }
   .home-header { position: relative; padding: calc(20 * var(--u)) var(--gutter) 0; align-items: center; }
   .home-header .logo-link, .home-nav { padding-top: 0; }
-  .home-nav { gap: calc(6 * var(--u)) calc(18 * var(--u)); font-size: calc(18 * var(--u)); }
-  /* text first, then the figure underneath it: nothing sits on top of the words */
-  .hero { height: auto; display: flex; flex-direction: column; }
+  .home-header { flex-wrap: nowrap; gap: 12px; padding-left: 16px; padding-right: 16px; }
+  .home-header .logo { width: 32px; height: 32px; }
+  .home-nav { flex-wrap: nowrap; gap: 12px; font-size: 16px; }
+  .home-nav sup { font-size: 11px; margin-right: 1px; }
+  .home-nav .theme-toggle { padding-left: 0; font-size: 13px; }
+  /* the text flows normally; the figure stays beside the title on the right, behind the
+     words, and fades out toward the left so it never sits over the lettering */
+  .hero { height: auto; }
   .hero-scrim { display: none; }
-  .hero-text { position: relative; left: auto; top: auto; order: 1; padding: calc(40 * var(--hs)) var(--gutter) 0; }
+  .hero-text { position: relative; left: auto; top: auto; padding: calc(40 * var(--hs)) var(--gutter) calc(48 * var(--hs)); }
   .hero-canvas {
-    position: relative; inset: auto; order: 2; height: calc(460 * var(--hs));
-    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 82%, transparent 100%);
-    mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 82%, transparent 100%);
+    top: 0; bottom: auto; height: 400px;
+    -webkit-mask-image: linear-gradient(90deg, transparent 22%, rgba(0,0,0,0.35) 48%, #000 72%), linear-gradient(180deg, #000 52%, transparent 66%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(90deg, transparent 22%, rgba(0,0,0,0.35) 48%, #000 72%), linear-gradient(180deg, #000 52%, transparent 66%);
+    mask-composite: intersect;
   }
   .hero-intro { width: auto; }
   .band, .band-notes { padding-top: calc(72 * var(--u)); padding-bottom: calc(72 * var(--u)); }
