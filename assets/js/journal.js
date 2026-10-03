@@ -7,6 +7,7 @@
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var BG = { paper: '#EDE3CC', night: '#0A0B0D' };
   var hero = null;
+  var booted = false;
   var heroCanvas = null;
 
   function theme() { return root.getAttribute('data-theme') === 'night' ? 'night' : 'paper'; }
@@ -40,20 +41,33 @@
 
   // The page background is tiled by the engine: only tiles near the viewport exist.
   var fields = [];
+  function workerUrl() {
+    // the worker loads the same engine file, cache version included
+    var engine = document.querySelector('script[src*="neural-engine.js"]');
+    var worker = document.querySelector('script[src*="journal.js"]');
+    if (!engine || !worker) return null;
+    var base = worker.src.replace(/journal\.js(\?.*)?$/, 'field-worker.js');
+    var v = (worker.src.match(/\?v=[^&]*/) || [''])[0];
+    return base + (v ? v + '&' : '?') + 'engine=' + encodeURIComponent(engine.src);
+  }
   function mountFields() {
     fields.forEach(function (f) { if (f.h) f.h.destroy(); });
+    var url = workerUrl();
     fields = $$('[data-field]').map(function (el) {
       return {
         el: el,
-        h: E().mountField(el, { seed: +el.getAttribute('data-seed') || 1, density: +(el.getAttribute('data-neurons') || 1), theme: theme() })
+        h: E().mountField(el, { seed: +el.getAttribute('data-seed') || 1, density: +(el.getAttribute('data-neurons') || 1), theme: theme(), workerUrl: url })
       };
     });
   }
 
-  function drawAll() {
+  function drawFigures() {
     $$('canvas[data-kind]').forEach(drawPlate);
     $$('canvas[data-thumb], canvas[data-specimen]').forEach(drawThumb);
     $$('canvas[data-logo]').forEach(drawLogo);
+  }
+  function drawAll() {
+    drawFigures();
     mountFields();
   }
 
@@ -79,10 +93,14 @@
     });
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', BG[t]);
-    if (!E()) return;
+    if (!E() || !booted) return;
+    // spread the redraw over frames so the switch itself never stalls
     requestAnimationFrame(function () {
-      drawAll();
-      if (hero && heroCanvas) { hero.destroy(); mountHero(heroCanvas); }
+      fields.forEach(function (f) { f.h.setTheme(t); });
+      requestAnimationFrame(function () {
+        if (hero && heroCanvas) { hero.destroy(); mountHero(heroCanvas); }
+        setTimeout(drawFigures, 0);
+      });
     });
   }
 
@@ -232,6 +250,7 @@
       if (!E()) return setTimeout(start, 50);
       requestAnimationFrame(function () {
         drawAll();
+        booted = true;
         watchField();
         heroCanvas = document.querySelector('canvas[data-hero]');
         if (heroCanvas) mountHero(heroCanvas);

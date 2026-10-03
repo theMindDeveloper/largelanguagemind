@@ -552,16 +552,17 @@
     canvas._field = () => { dead = true; io.disconnect(); if (raf) cancelAnimationFrame(raf); };
   }
   // ---------- page background, tiled ----------
-  // Same look as renderField across the full page height, but split into window-sized
-  // tiles: a tile is drawn only when it comes near the viewport and freed when it is far
-  // away, and impulses only animate on visible tiles. Memory and work stay at about one
-  // screen whatever the page length.
-  function mountField(el, opts) {
-    opts = opts || {};
-    useTheme(opts.theme); const th = TH;
-    const seed = opts.seed || 1, density = opts.density == null ? 1 : opts.density;
-    const W = Math.max(50, Math.round(el.clientWidth)), H = Math.max(50, Math.round(el.clientHeight));
-    const TILE = Math.round(clamp(window.innerHeight || 900, 600, 1400)), nT = Math.ceil(H / TILE), M = 16;
+  // The background spans the full page and scrolls with it, but it is cut into
+  // window-sized tiles. Tiles are generated only near the viewport, preferably in a
+  // Web Worker (assets/js/field-worker.js) so scrolling never waits for them; tiles far
+  // away are freed. Travelling impulses repaint only the small box around themselves.
+
+  // The model is pure: given a page size and theme it can render any tile. It runs in
+  // the worker, or on the main thread when workers / OffscreenCanvas are unavailable.
+  function fieldModel(o) {
+    useTheme(o.theme); const th = TH;
+    const seed = o.seed || 1, density = o.density == null ? 1 : o.density;
+    const W = o.W, H = o.H, TILE = o.TILE, nT = Math.ceil(H / TILE), M = 16;
     const paper = th.blend !== 'lighter', U = 520, n = makeNoise(seed);
     const ang = (x, y) => Math.PI / 2 + fbm(n, x / U, y / U, 3) * 1.9;
 
@@ -570,24 +571,24 @@
     if (density > 0) {
       const r = rng(seed * 7 + 3), area = (W * H) / 200000;
       const layers = [
-        [Math.max(1, Math.round(area * 0.07 * density)), [1.9, 2.4], 3.4, 1, TH.ambNear, 0.22],
-        [Math.max(2, Math.round(area * 0.32 * density)), [1.05, 1.4], 2.0, 1, TH.ambNear, 0.34],
-        [Math.max(1, Math.round(area * 0.14 * density)), [0.6, 0.75], 0.6, 0.9, TH.ambNear, 0.42],
+        [Math.max(1, Math.round(area * 0.07 * density)), [1.9, 2.4], 3.4, 1, th.ambNear, 0.22],
+        [Math.max(2, Math.round(area * 0.32 * density)), [1.05, 1.4], 2.0, 1, th.ambNear, 0.34],
+        [Math.max(1, Math.round(area * 0.14 * density)), [0.6, 0.75], 0.6, 0.9, th.ambNear, 0.42],
       ];
       layers.forEach(([cnt, [s0, s1], blur, al, col, ga], li) => {
         for (let i = 0, tries = 0; i < cnt && tries < 500 + cnt * 40; tries++) {
           const side = r() < 0.5 ? 0 : 1, band = Math.min(0.27, 440 / W), x = side ? W * (1 - band * r()) : W * band * r(), y = r() * H;
           const sc = s0 + r() * (s1 - s0), rad = 150 * sc, GAP = 160;
           if (cells.some((p) => Math.hypot(p.x - x, p.y - y) < p.rad + rad + GAP)) continue;
-          const o = { x, y, type: TYPES[(r() * TYPES.length) | 0], s: sc, seed: seed * 31 + li * 977 + tries, axonAng: 0.5 + r() * 2.2, axonLen: (240 + r() * 320) * sc };
-          cells.push({ x, y, rad, sc, li, blur, al, col, ga, o, N: null, reach: o.axonLen + 260 * sc });
+          const g = { x, y, type: TYPES[(r() * TYPES.length) | 0], s: sc, seed: seed * 31 + li * 977 + tries, axonAng: 0.5 + r() * 2.2, axonLen: (240 + r() * 320) * sc };
+          cells.push({ id: cells.length, x, y, rad, sc, li, blur, al, col, ga, g, N: null, reach: g.axonLen + 260 * sc });
           i++;
         }
       });
     }
     const grow = (c) => {
       if (!c.N) {
-        c.N = growNeuron(c.o);
+        c.N = growNeuron(c.g);
         let a = Infinity, b = -Infinity; c.N.axon.pts.forEach((p) => { if (p[1] < a) a = p[1]; if (p[1] > b) b = p[1]; });
         c.ay0 = a; c.ay1 = b;
       }
@@ -595,74 +596,138 @@
     };
     const cellsIn = (y0, y1) => cells.filter((c) => c.y + c.reach > y0 && c.y - c.reach < y1).filter((c) => { const b = grow(c).bbox; return b[3] > y0 && b[1] < y1; });
 
+    function renderTile(i) {
+      const prev = TH; TH = th;
+      const top = i * TILE, h = Math.min(TILE, H - top);
+      const c = layer(W, h), ctx = c.getContext('2d');
+      // fibres: generated per band of the page so neighbouring tiles agree at their seams
+      ctx.globalCompositeOperation = paper ? 'multiply' : 'lighter'; ctx.lineCap = 'round';
+      ctx.setTransform(1, 0, 0, 1, 0, -top);
+      for (let b = i - 1; b <= i + 1; b++) {
+        if (b < 0 || b >= nT) continue;
+        const rb = rng(seed * 1013 + b * 7919 + 1), bt = b * TILE, bh = Math.min(TILE, H - bt), count = Math.round((W * bh) / 330);
+        for (let k = 0; k < count; k++) {
+          const sx = rb() * W, sy = bt + rb() * bh, lw = 0.35 + rb() * 0.45;
+          if (sy < top - 140 || sy > top + h + 140) continue;
+          const a0 = ang(sx, sy), dx = Math.abs(Math.cos(a0)), dy = Math.abs(Math.sin(a0)), dz = 0.5 + 0.5 * n(sx / 300 + 9, sy / 300);
+          const m = Math.max(dx, dy, dz * 0.8); let col = [(dx / m) * 235, (dy / m) * 245, ((dz * 0.8) / m) * 225]; if (paper) col = col.map((v) => v * 0.55);
+          ctx.strokeStyle = rgba(col, paper ? 0.025 : 0.016); ctx.lineWidth = lw; ctx.beginPath();
+          for (const dir of [1, -1]) { let x = sx, y = sy; ctx.moveTo(x, y); for (let j = 0; j < 30; j++) { const a = ang(x, y); x += Math.cos(a) * 4.5 * dir; y += Math.sin(a) * 4.5 * dir; ctx.lineTo(x, y); } }
+          ctx.stroke();
+        }
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over';
+      // neurons: three depth layers, each blurred as one image. The two blurred layers are
+      // drawn at half resolution (a quarter of the pixels) since they are soft anyway.
+      const live = [];
+      if (cells.length) {
+        const here = cellsIn(top - M, top + h + M);
+        for (let li = 0; li < 3; li++) {
+          const L = here.filter((cl) => cl.li === li); if (!L.length) continue;
+          const blur = L[0].blur, k = blur >= 1.5 ? 0.5 : 1;
+          const tmp = layer(W * k, (h + 2 * M) * k), tx = tmp.getContext('2d');
+          tx.setTransform(k, 0, 0, k, 0, (M - top) * k);
+          L.forEach((cl) => drawNeuron(tx, cl.N, 1, cl.col, cl.al, 1));
+          ctx.globalAlpha = paper ? L[0].ga : L[0].ga * 0.7; ctx.filter = `blur(${blur * k}px)`;
+          ctx.drawImage(tmp, 0, 0, tmp.width, tmp.height, 0, -M, W, h + 2 * M);
+          ctx.filter = 'none'; ctx.globalAlpha = 1;
+        }
+        here.forEach((cl) => { if (cl.li > 0) live.push({ id: cl.id, li: cl.li, s: cl.N.s, pts: cl.N.axon.pts, cd: cl.N.axon.cd, len: cl.N.axon.len, ay0: cl.ay0, ay1: cl.ay1 }); });
+      }
+      TH = prev;
+      return { canvas: c, live, top, h };
+    }
+    return { renderTile, nT, TILE, W, H };
+  }
+
+  // the box a pulse currently paints, in page coordinates
+  function pulseBox(p) {
+    const head = p.d, tail = Math.max(0, head - p.trail), pts = p.pts, cd = p.cd;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    const add = (q) => { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] < y0) y0 = q[1]; if (q[1] > y1) y1 = q[1]; };
+    add(pointAt(pts, cd, tail)); add(pointAt(pts, cd, head));
+    for (let i = idxAt(cd, tail); i < pts.length && cd[i] <= head; i++) add(pts[i]);
+    const m = Math.max(p.glow, p.w) + 3;
+    return [x0 - m, y0 - m, x1 + m, y1 + m];
+  }
+
+  function mountField(el, opts) {
+    opts = opts || {};
+    let theme = opts.theme;
+    const W = Math.max(50, Math.round(el.clientWidth)), H = Math.max(50, Math.round(el.clientHeight));
+    const TILE = Math.round(clamp(window.innerHeight || 900, 600, 1400)), nT = Math.ceil(H / TILE);
+    const base = { seed: opts.seed || 1, density: opts.density == null ? 1 : opts.density, W, H, TILE };
+    let gen = 0, dead = false, shown = false;
+
+    // renderer: a worker when possible, else the same model on the main thread
+    let worker = null, local = null;
+    if (opts.workerUrl && window.Worker && window.OffscreenCanvas && window.createImageBitmap) {
+      try {
+        worker = new Worker(opts.workerUrl);
+        worker.onmessage = (e) => { const m = e.data; if (m.gen === gen) receive(tiles[m.i], m.bitmap, m.live); else if (m.bitmap) m.bitmap.close(); };
+        worker.onerror = () => { worker.terminate(); worker = null; local = null; tiles.forEach((t) => { t.pending = false; if (t.want && !t.drawn) want(t); }); };
+      } catch (e) { worker = null; }
+    }
+    function init() {
+      gen++;
+      if (worker) worker.postMessage({ type: 'init', gen, opts: Object.assign({ theme }, base) });
+      else local = null;
+    }
+
     const tiles = [];
     for (let i = 0; i < nT; i++) {
       const c = document.createElement('canvas'), top = i * TILE, h = Math.min(TILE, H - top);
       c.style.cssText = `position:absolute;left:0;top:${top}px;width:${W}px;height:${h}px;display:block`;
       c.setAttribute('aria-hidden', 'true'); c.width = 0; c.height = 0;
-      const t = { c, i, top, h, drawn: false, still: null, vis: false, dirty: false, live: [] };
+      const t = { c, i, top, h, drawn: false, want: false, pending: false, vis: false, still: null, live: [], boxes: [], gen: 0 };
       c._tile = t; el.appendChild(c); tiles.push(t);
     }
 
-    function drawTile(t) {
-      const prev = TH; TH = th;
-      const c = t.c; c.width = W; c.height = t.h;
-      const ctx = c.getContext('2d');
-      // fibres: generated per band of the page so neighbouring tiles agree at their seams
-      ctx.globalCompositeOperation = paper ? 'multiply' : 'lighter'; ctx.lineCap = 'round';
-      ctx.setTransform(1, 0, 0, 1, 0, -t.top);
-      for (let b = t.i - 1; b <= t.i + 1; b++) {
-        if (b < 0 || b >= nT) continue;
-        const rb = rng(seed * 1013 + b * 7919 + 1), bt = b * TILE, bh = Math.min(TILE, H - bt), count = Math.round((W * bh) / 330);
-        for (let k = 0; k < count; k++) {
-          const sx = rb() * W, sy = bt + rb() * bh, lw = 0.35 + rb() * 0.45;
-          if (sy < t.top - 140 || sy > t.top + t.h + 140) continue;
-          const a0 = ang(sx, sy), dx = Math.abs(Math.cos(a0)), dy = Math.abs(Math.sin(a0)), dz = 0.5 + 0.5 * n(sx / 300 + 9, sy / 300);
-          const m = Math.max(dx, dy, dz * 0.8); let col = [(dx / m) * 235, (dy / m) * 245, ((dz * 0.8) / m) * 225]; if (paper) col = col.map((v) => v * 0.55);
-          ctx.strokeStyle = rgba(col, paper ? 0.025 : 0.016); ctx.lineWidth = lw; ctx.beginPath();
-          for (const dir of [1, -1]) { let x = sx, y = sy; ctx.moveTo(x, y); for (let i = 0; i < 30; i++) { const a = ang(x, y); x += Math.cos(a) * 4.5 * dir; y += Math.sin(a) * 4.5 * dir; ctx.lineTo(x, y); } }
-          ctx.stroke();
-        }
-      }
-      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over';
-      // neurons: three depth layers, each blurred as one image; drawn with a margin so blur has no seam
-      if (cells.length) {
-        const here = cellsIn(t.top - M, t.top + t.h + M);
-        const tmp = layer(W, t.h + 2 * M), tx = tmp.getContext('2d');
-        for (let li = 0; li < 3; li++) {
-          const L = here.filter((c) => c.li === li); if (!L.length) continue;
-          tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, W, t.h + 2 * M); tx.setTransform(1, 0, 0, 1, 0, M - t.top);
-          L.forEach((cl) => drawNeuron(tx, cl.N, 1, cl.col, cl.al, 1));
-          ctx.globalAlpha = paper ? L[0].ga : L[0].ga * 0.7; ctx.filter = `blur(${L[0].blur}px)`; ctx.drawImage(tmp, 0, -M); ctx.filter = 'none'; ctx.globalAlpha = 1;
-        }
-        t.live = here.filter((c) => c.li > 0);
-      }
-      t.still = null; t.dirty = false; t.drawn = true;
-      TH = prev;
+    function receive(t, img, live) {
+      if (!t || dead || !t.want) { if (img && img.close) img.close(); return; }
+      t.pending = false;
+      if (t.still && t.still.close) t.still.close();
+      t.c.width = W; t.c.height = t.h;
+      t.c.getContext('2d').drawImage(img, 0, 0);
+      t.still = img; t.live = live; t.boxes = []; t.drawn = true; t.gen = gen;
       if (!shown) { shown = true; el.style.opacity = opts.opacity == null ? '1' : String(opts.opacity); }
+      kick(); pump();
     }
-    function freeTile(t) { t.c.width = 0; t.c.height = 0; t.drawn = false; t.still = null; t.dirty = false; t.live = []; }
+    function freeTile(t) {
+      if (t.still && t.still.close) t.still.close();
+      t.c.width = 0; t.c.height = 0; t.drawn = false; t.still = null; t.live = []; t.boxes = []; t.pending = false;
+    }
 
-    // draw queue: visible tiles first, one tile per task so scrolling stays smooth
-    let shown = false, queue = [], qt = 0, dead = false;
+    // request queue: visible tiles first; one tile at a time on the main thread fallback
+    let qt = 0;
     const idle = window.requestIdleCallback || ((f) => setTimeout(f, 16));
     function pump() {
-      qt = 0; if (dead || !queue.length) return;
-      queue.sort((a, b) => (b.vis - a.vis));
-      const t = queue.shift(); if (!t.drawn && t.want) drawTile(t);
-      kick(); if (queue.length) qt = idle(pump, { timeout: 120 });
+      if (dead) return;
+      const todo = tiles.filter((t) => t.want && !t.pending && (!t.drawn || t.gen !== gen)).sort((a, b) => b.vis - a.vis);
+      if (!todo.length) return;
+      if (worker) {
+        todo.forEach((t) => { t.pending = true; worker.postMessage({ type: 'tile', gen, i: t.i }); });
+      } else if (!qt) {
+        qt = idle(() => {
+          qt = 0; if (dead) return;
+          const t = todo[0]; if (!t.want) return pump();
+          if (!local) local = fieldModel(Object.assign({ theme }, base));
+          const out = local.renderTile(t.i);
+          receive(t, out.canvas, out.live);
+        }, { timeout: 150 });
+      }
     }
-    function want(t) { t.want = true; if (!t.drawn && !queue.includes(t)) queue.push(t); if (!qt) qt = idle(pump, { timeout: 120 }); }
+    function want(t) { t.want = true; pump(); }
 
     const near = new IntersectionObserver((es) => es.forEach((e) => {
       const t = e.target._tile;
       if (e.isIntersecting) want(t);
-      else { t.want = false; queue = queue.filter((q) => q !== t); if (t.drawn) freeTile(t); }
+      else { t.want = false; if (t.drawn || t.pending) freeTile(t); }
     }), { rootMargin: '150% 0px' });
-    const seen = new IntersectionObserver((es) => { es.forEach((e) => { e.target._tile.vis = e.isIntersecting; }); kick(); });
+    const seen = new IntersectionObserver((es) => { es.forEach((e) => { e.target._tile.vis = e.isIntersecting; }); kick(); pump(); });
     tiles.forEach((t) => { near.observe(t.c); seen.observe(t.c); });
 
-    // impulses travelling along background axons, only on visible tiles, ~30 redraws a second
+    // impulses: only on visible tiles, and only the small box around each pulse is repainted
     let pul = [], raf = 0, lastT = 0;
     function kick() { if (!raf && !dead && tiles.some((t) => t.vis && t.drawn)) { lastT = performance.now(); raf = requestAnimationFrame(tick); } }
     function tick(now) {
@@ -670,35 +735,45 @@
       const vt = tiles.filter((t) => t.vis && t.drawn); if (!vt.length) return;
       if (now - lastT < 32) { raf = requestAnimationFrame(tick); return; }
       const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
-      const pool = []; vt.forEach((t) => t.live.forEach((c) => { if (pool.indexOf(c) < 0) pool.push(c); }));
+      useTheme(theme); const th = TH;
+      const pool = [], ids = {};
+      vt.forEach((t) => t.live.forEach((c) => { if (!ids[c.id]) { ids[c.id] = 1; pool.push(c); } }));
       if (pool.length && Math.random() < dt * (0.15 + pool.length * 0.05)) {
-        const L = pool[(Math.random() * pool.length) | 0], ax = L.N.axon, s = L.N.s;
-        pul.push({ pts: ax.pts, cd: ax.cd, len: ax.len, d: 0, v: ax.len / (1.6 + Math.random() * 1.2), col: th.input, a: L.li === 1 ? 0.35 : 0.5, w: 1.3 * s, trail: 70 * s, glow: 7 * s, y0: L.ay0 - 10 * s, y1: L.ay1 + 10 * s });
+        const L = pool[(Math.random() * pool.length) | 0], s = L.s;
+        pul.push({ pts: L.pts, cd: L.cd, len: L.len, d: 0, v: L.len / (1.6 + Math.random() * 1.2), col: th.input, a: L.li === 1 ? 0.35 : 0.5, w: 1.3 * s, trail: 70 * s, glow: 7 * s, y0: L.ay0 - 10 * s, y1: L.ay1 + 10 * s });
       }
       pul.forEach((p) => { p.d += p.v * dt; });
       pul = pul.filter((p) => p.d < p.len + p.trail * 0.2);
-      const prev = TH; TH = th;
+      const boxes = pul.map((p) => ({ p, b: pulseBox(p) }));
       vt.forEach((t) => {
-        const touching = pul.filter((p) => p.y1 > t.top && p.y0 < t.top + t.h);
-        if (!touching.length && !t.dirty) return;
+        const mine = boxes.filter((q) => q.b[3] > t.top && q.b[1] < t.top + t.h);
+        if (!mine.length && !t.boxes.length) return;
         const ctx = t.c.getContext('2d');
-        if (!t.still) { t.still = layer(W, t.h); t.still.getContext('2d').drawImage(t.c, 0, 0); }
-        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0, 0, W, t.h); ctx.drawImage(t.still, 0, 0);
-        if (touching.length) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over';
+        // restore last frame's boxes and this frame's boxes from the clean tile
+        t.boxes.concat(mine.map((q) => q.b)).forEach((b) => {
+          const x = Math.max(0, Math.floor(b[0])), y = Math.max(0, Math.floor(b[1] - t.top));
+          const w = Math.min(W, Math.ceil(b[2])) - x, h = Math.min(t.h, Math.ceil(b[3] - t.top)) - y;
+          if (w > 0 && h > 0) { ctx.clearRect(x, y, w, h); ctx.drawImage(t.still, x, y, w, h, x, y, w, h); }
+        });
+        if (mine.length) {
           ctx.globalCompositeOperation = th.blend; ctx.setTransform(1, 0, 0, 1, 0, -t.top);
-          touching.forEach((p) => drawPulse(ctx, p));
+          mine.forEach((q) => drawPulse(ctx, q.p));
           ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over';
         }
-        t.dirty = touching.length > 0;
+        t.boxes = mine.map((q) => q.b);
       });
-      TH = prev;
       raf = requestAnimationFrame(tick);
     }
 
+    init();
     return {
+      // theme change: the current tiles stay on screen until their replacements arrive
+      setTheme(t) { if (t === theme) return; theme = t; pul = []; tiles.forEach((x) => { x.pending = false; }); init(); pump(); },
       destroy() {
         dead = true; near.disconnect(); seen.disconnect();
         if (raf) cancelAnimationFrame(raf);
+        if (worker) worker.terminate();
         tiles.forEach((t) => { freeTile(t); t.c.remove(); });
       },
     };
@@ -937,5 +1012,5 @@
     ctx.setTransform(k * dpr, 0, 0, k * dpr, (W * (fx == null ? 0.5 : fx)) * dpr, oy * dpr);
     drawNeuron(ctx, N, 1, TH.ink, 0.92, Math.max(1, 0.6 / k), true);
   }
-  window.LLMEngine = { mountHero, mountField, renderPlate, renderThumb, renderSpecimen, renderLogo, growNeuron, TYPES };
+  window.LLMEngine = { mountHero, mountField, fieldModel, renderPlate, renderThumb, renderSpecimen, renderLogo, growNeuron, TYPES };
 })();

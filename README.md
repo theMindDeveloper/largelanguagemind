@@ -32,6 +32,7 @@ _includes/footer.html       footer
 _includes/mathjax.html      LaTeX support for notes
 assets/css/journal.css      design tokens and all styles
 assets/js/neural-engine.js  figure generator (do not edit)
+assets/js/field-worker.js   draws the page background off the main thread
 assets/js/journal.js        mounts figures, theme toggle, contents, filters
 assets/brand/               logo PNGs, favicon, logo-export.html
 ```
