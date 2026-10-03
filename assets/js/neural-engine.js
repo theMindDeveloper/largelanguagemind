@@ -501,7 +501,7 @@
     if (canvas._field) { canvas._field(); canvas._field = null; }
     const live = [];
     const n = makeNoise(seed), r = rng(seed), paper = TH.blend !== 'lighter', U = 520;
-    ctx.globalCompositeOperation = paper ? 'multiply' : 'lighter'; ctx.lineCap = 'round';
+    ctx.globalCompositeOperation = paper ? 'source-over' : 'lighter'; ctx.lineCap = 'round';
     const ang = (x, y) => Math.PI / 2 + fbm(n, x / U, y / U, 3) * 1.9;
     const count = Math.round((W * H) / 330);
     for (let k = 0; k < count; k++) {
@@ -613,8 +613,10 @@
       const prev = TH; TH = th;
       const top = i * TILE, h = Math.min(TILE, H - top);
       const c = layer(W, h), ctx = c.getContext('2d');
-      // fibres: generated per band of the page so neighbouring tiles agree at their seams
-      ctx.globalCompositeOperation = paper ? 'multiply' : 'lighter'; ctx.lineCap = 'round';
+      // fibres: generated per band of the page so neighbouring tiles agree at their seams.
+      // Paper uses plain source-over, not multiply: at 2.5% alpha on a transparent tile they
+      // look the same, but multiply makes the GPU copy the canvas for every stroke.
+      ctx.globalCompositeOperation = paper ? 'source-over' : 'lighter'; ctx.lineCap = 'round';
       ctx.setTransform(1, 0, 0, 1, 0, -top);
       for (let b = i - 1; b <= i + 1; b++) {
         if (b < 0 || b >= nT) continue;
@@ -825,7 +827,7 @@
     const W = Math.max(50, rect.width), H = Math.max(50, rect.height); canvas.width = W * dpr; canvas.height = H * dpr;
     const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     const n = makeNoise(seed), r = rng(seed), paper = TH.blend !== 'lighter', U = 520;
-    ctx.globalCompositeOperation = paper ? 'multiply' : 'lighter'; ctx.lineCap = 'round';
+    ctx.globalCompositeOperation = paper ? 'source-over' : 'lighter'; ctx.lineCap = 'round';
     const ang = (x, y) => Math.PI / 2 + fbm(n, x / U, y / U, 3) * 1.9;
     const count = Math.round((W * H) / 260);
     for (let k = 0; k < count; k++) {
@@ -951,7 +953,7 @@
   }
   function renderTracts(canvas, seed) {
     const g = plateGeom(canvas), n = makeNoise(seed), r = rng(seed), ctx = g.ctx;
-    ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0); const paper = TH.blend !== 'lighter'; ctx.globalCompositeOperation = paper ? 'multiply' : 'lighter'; ctx.lineCap = 'round';
+    ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0); const paper = TH.blend !== 'lighter'; ctx.globalCompositeOperation = paper ? 'source-over' : 'lighter'; ctx.lineCap = 'round';
     const toPx = (nx, ny) => [g.cx + (nx * g.bw) / 2, g.cy + (ny * g.bh) / 2];
     const ang = (nx, ny) => {
       const cc = sstep(0.42, 0.12, Math.abs(ny + 0.04)) * sstep(0.62, 0.18, Math.abs(nx));
