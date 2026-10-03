@@ -169,7 +169,7 @@ The site is served at `https://theminddev.com/largelanguagemind`. The domain its
 
 ### Design system
 
-Colours, type, spacing and motion follow the design hand-off. The tokens are CSS custom properties at the top of `assets/css/journal.css`, in two sets: paper (default) and night (`lights off`). The visitor's choice is stored in `localStorage` under `llm-theme`. Visitors whose system asks for reduced motion get a hero that grows once and then stays still.
+Colours, type, spacing and motion follow the design hand-off. The tokens are CSS custom properties at the top of `assets/css/journal.css`, in two sets: paper (default) and night (`lights off`). The visitor's choice is stored in `localStorage` under `llm-theme`. Article pages also offer a **newspaper view** (justified multi-column text with drop caps; headings, figures, tables and pull quotes span all columns), switched from the article header and stored under `llm-read`. It needs nothing extra in the Markdown: any note renders in both views. Visitors whose system asks for reduced motion get a hero that grows once and then stays still.
 
 ---
 

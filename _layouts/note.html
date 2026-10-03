@@ -2,7 +2,7 @@
 layout: default
 ---
 {%- assign type = page.neuron.type | default: 'pyramidal' -%}
-<div class="page">
+<div class="page note-page">
   <div class="field" data-field data-seed="17" data-neurons="1" aria-hidden="true"></div>
 
   <header class="note-header">
@@ -10,6 +10,7 @@ layout: default
       <a class="wordmark" href="{{ '/' | relative_url }}"><canvas data-logo aria-hidden="true"></canvas><span>Large Language <em>Mind</em></span></a>
       <span class="note-header-links">
         <a href="{{ '/#notes' | relative_url }}">← all notes</a>
+        <button class="read-toggle" type="button" aria-pressed="false">newspaper view</button>
         <button class="theme-toggle" type="button" aria-pressed="false">lights off</button>
       </span>
     </div>

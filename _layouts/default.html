@@ -17,6 +17,8 @@
       try {
         var t = localStorage.getItem('llm-theme');
         if (t === 'night' || t === 'paper') document.documentElement.setAttribute('data-theme', t);
+        var r = localStorage.getItem('llm-read');
+        if (r === 'columns') document.documentElement.setAttribute('data-read', r);
       } catch (e) {}
     })();
   </script>

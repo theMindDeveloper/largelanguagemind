@@ -104,6 +104,25 @@
     });
   }
 
+  // ---------- article: book view or newspaper view ----------
+  function readMode() { return root.getAttribute('data-read') === 'columns' ? 'columns' : 'book'; }
+  function setRead(mode, keepPlace) {
+    // keep the reader on the same heading when the layout reflows
+    var anchor = null, offset = 0;
+    if (keepPlace) {
+      var heads = $$('[data-sec]');
+      for (var i = 0; i < heads.length; i++) if (heads[i].getBoundingClientRect().top < 180) anchor = heads[i];
+      if (anchor) offset = anchor.getBoundingClientRect().top;
+    }
+    if (mode === 'columns') root.setAttribute('data-read', 'columns'); else root.removeAttribute('data-read');
+    try { localStorage.setItem('llm-read', mode); } catch (e) { /* private mode */ }
+    $$('.read-toggle').forEach(function (b) {
+      b.textContent = mode === 'columns' ? 'book view' : 'newspaper view';
+      b.setAttribute('aria-pressed', mode === 'columns' ? 'true' : 'false');
+    });
+    if (anchor) window.scrollTo(0, anchor.getBoundingClientRect().top + window.scrollY - offset);
+  }
+
   // ---------- home: notes filter and atlas links ----------
   function setFilter(key) {
     var rows = $$('.note-row');
@@ -229,6 +248,10 @@
     setTheme(theme());
     $$('.theme-toggle').forEach(function (b) {
       b.addEventListener('click', function () { setTheme(theme() === 'night' ? 'paper' : 'night'); });
+    });
+    setRead(readMode(), false);
+    $$('.read-toggle').forEach(function (b) {
+      b.addEventListener('click', function () { setRead(readMode() === 'columns' ? 'book' : 'columns', true); });
     });
 
     $$('.filters button').forEach(function (b) {
