@@ -99,7 +99,12 @@
       fields.forEach(function (f) { f.h.setTheme(t); });
       requestAnimationFrame(function () {
         if (hero && heroCanvas) { hero.destroy(); mountHero(heroCanvas); }
-        setTimeout(drawFigures, 0);
+        // the remaining figures redraw one per idle slot, so the switch itself stays instant
+        var queue = $$('canvas[data-logo]').map(function (el) { return function () { drawLogo(el); }; })
+          .concat($$('canvas[data-thumb], canvas[data-specimen]').map(function (el) { return function () { drawThumb(el); }; }))
+          .concat($$('canvas[data-kind]').map(function (el) { return function () { drawPlate(el); }; }));
+        var idle = window.requestIdleCallback || function (f) { return setTimeout(f, 16); };
+        (function next() { var job = queue.shift(); if (!job || theme() !== t) return; job(); idle(next, { timeout: 200 }); })();
       });
     });
   }

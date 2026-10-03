@@ -314,6 +314,13 @@
     opts = opts || {}; const theme = opts.theme || 'night'; useTheme(theme);
     const ctx = canvas.getContext('2d');
     let W = 0, H = 0, dpr = 1, raf = 0, last = performance.now(), T = 0, lastLt = null, phase = -1, visible = true, dead = false;
+    // The ambient cells never change after their fade-in, so they live on a layer under the
+    // animated canvas and are drawn once instead of every frame (absolute layouts only).
+    let under = null, uctx = null, staticAlpha = -1;
+    if (canvas.parentNode && getComputedStyle(canvas).position === 'absolute') {
+      under = document.createElement('canvas'); under.className = canvas.className; under.setAttribute('aria-hidden', 'true');
+      canvas.parentNode.insertBefore(under, canvas); uctx = under.getContext('2d');
+    }
     let speed = opts.speed == null ? 0.7 : opts.speed, ambientN = opts.ambient == null ? 8 : opts.ambient;
     let A, B, cacheA, cacheB, bg, amb = [], pulses = [], hover = null, reach = null;
     const grow = { g: 0, target: 0 }, syn = { w: 0, flash: 0, p: [0, 0], formed: false };
@@ -322,7 +329,9 @@
     function build() {
       useTheme(theme);
       const rect = canvas.getBoundingClientRect(); W = Math.max(320, rect.width); H = Math.max(400, rect.height);
-      dpr = Math.min(2, window.devicePixelRatio || 1); canvas.width = W * dpr; canvas.height = H * dpr;
+      // 1.5x is indistinguishable for soft ink lines and saves ~45% of the pixels on 2x screens
+      dpr = Math.min(1.5, window.devicePixelRatio || 1); canvas.width = W * dpr; canvas.height = H * dpr;
+      if (under) { under.width = canvas.width; under.height = canvas.height; staticAlpha = -1; }
       const sc = clamp(Math.min(W / 1180, H / 760), 0.72, 1.3) * 1.45;
       const nar = clamp((1500 - W) / 600, 0, 1);
       const pa = [(LAYOUT.a.fx + nar * 0.15) * W, LAYOUT.a.fy * H], pb = [(LAYOUT.b.fx + nar * 0.05) * W, LAYOUT.b.fy * H];
@@ -409,6 +418,7 @@
     }
     function frame(now) {
       if (dead) return; raf = requestAnimationFrame(frame);
+      if (now - last < 15.5) return; // at most ~60 redraws a second, even on 120-240Hz screens
       const rdt = Math.min(0.05, (now - last) / 1000); last = now;
       if (!visible) return;
       const dt = rdt * speed; T += dt; useTheme(theme);
@@ -418,7 +428,10 @@
         lastLt = lt;
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-      ctx.globalAlpha = sstep(0, 1.6, T); ctx.drawImage(bg, 0, 0, W, H); ctx.globalAlpha = 1;
+      const ba = sstep(0, 1.6, T);
+      if (under) {
+        if (ba !== staticAlpha) { uctx.setTransform(1, 0, 0, 1, 0, 0); uctx.clearRect(0, 0, under.width, under.height); uctx.globalAlpha = ba; uctx.drawImage(bg, 0, 0); uctx.globalAlpha = 1; staticAlpha = ba; }
+      } else { ctx.globalAlpha = ba; ctx.drawImage(bg, 0, 0, W, H); ctx.globalAlpha = 1; }
       if (T > INTRO && Math.random() < dt * 0.9 && amb.length) {
         const N = amb[(Math.random() * amb.length) | 0], ax = N.axon;
         pulses.push({ pts: ax.pts, cd: ax.cd, len: ax.len, d: 0, v: ax.len / (1.3 + Math.random()), col: TH.input, a: N.far ? 0.14 : 0.28, w: 1.2 * N.s, trail: 50 * N.s, glow: 6 * N.s });
@@ -473,7 +486,7 @@
     const io = new IntersectionObserver((es) => { visible = es[0].isIntersecting; }); io.observe(canvas);
     raf = requestAnimationFrame(frame);
     return {
-      destroy() { dead = true; cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); },
+      destroy() { dead = true; cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); if (under) under.remove(); },
       setHover(k) { hover = k; },
       setSpeed(v) { speed = v; },
       setAmbient(n) { ambientN = n; build(); },

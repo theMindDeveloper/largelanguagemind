@@ -44,7 +44,6 @@ body {
   color: var(--ink);
   font-family: var(--serif);
   -webkit-font-smoothing: antialiased;
-  transition: background .5s, color .5s;
 }
 a { color: inherit; text-decoration: none; }
 a:hover { color: var(--accent); }
@@ -185,7 +184,7 @@ button { font: inherit; color: inherit; }
 .site-footer a { text-decoration: underline; text-underline-offset: calc(3 * var(--u)); }
 
 /* ---------- article ---------- */
-.note-header { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); transition: background .5s; }
+.note-header { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
 .note-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(8 * var(--u)) calc(32 * var(--u)); padding: calc(10 * var(--u)) var(--gutter); }
 .wordmark { display: flex; align-items: center; gap: calc(10 * var(--u)); white-space: nowrap; color: var(--ink); }
 .wordmark canvas { display: block; width: calc(34 * var(--u)); height: calc(34 * var(--u)); }
@@ -264,7 +263,8 @@ button { font: inherit; color: inherit; }
 
 /* figure: an image paragraph followed by an italic caption becomes a plate figure (journal.js) */
 .prose figure { margin: calc(8 * var(--u)) 0 calc(36 * var(--u)); }
-.prose figure .fig-paper { background: var(--fig-paper); padding: var(--fig-pad); display: flex; justify-content: center; }
+.prose figure .fig-paper { background: var(--fig-paper); padding: var(--fig-pad); display: flex; justify-content: center; isolation: isolate; }
+:root:not([data-theme="night"]) .prose figure .fig-paper { background: var(--bg); }
 .prose figcaption { display: flex; gap: calc(14 * var(--u)); align-items: baseline; padding-top: calc(12 * var(--u)); }
 .prose figcaption .fig-n { flex: none; font-family: var(--hand); font-size: calc(13 * var(--u)); line-height: 1.8; color: var(--accent); }
 .prose figcaption .fig-t { font-style: italic; font-size: calc(17 * var(--u)); line-height: 1.45; color: var(--muted); }
