@@ -38,20 +38,33 @@
     if (reduceMotion) setTimeout(function () { if (hero) hero.setSpeed(0); }, 4200);
   }
 
+  // The page background is tiled by the engine: only tiles near the viewport exist.
+  var fields = [];
+  function mountFields() {
+    fields.forEach(function (f) { if (f.h) f.h.destroy(); });
+    fields = $$('[data-field]').map(function (el) {
+      return {
+        el: el,
+        h: E().mountField(el, { seed: +el.getAttribute('data-seed') || 1, density: +(el.getAttribute('data-neurons') || 1), theme: theme() })
+      };
+    });
+  }
+
   function drawAll() {
     $$('canvas[data-kind]').forEach(drawPlate);
     $$('canvas[data-thumb], canvas[data-specimen]').forEach(drawThumb);
     $$('canvas[data-logo]').forEach(drawLogo);
+    mountFields();
   }
 
   function watchField() {
     if (!window.ResizeObserver) return;
-    $$('canvas[data-kind="field"]').forEach(function (el) {
+    $$('[data-field]').forEach(function (el) {
       var lw = el.clientWidth, lh = el.clientHeight, t = 0;
       new ResizeObserver(function () {
         if (Math.abs(el.clientWidth - lw) < 2 && Math.abs(el.clientHeight - lh) < 40) return;
         lw = el.clientWidth; lh = el.clientHeight;
-        clearTimeout(t); t = setTimeout(function () { drawPlate(el); }, 300);
+        clearTimeout(t); t = setTimeout(mountFields, 300);
       }).observe(el);
     });
   }
