@@ -1,0 +1,30 @@
+# Builds the site exactly like GitHub Pages does, on every push and pull request
+# to a branch other than main, and uploads the result as an artifact named "site".
+# Use it to check a new note before merging. Publishing still happens through
+# GitHub Pages on main.
+name: Build check
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build with the GitHub Pages Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: _site
+          retention-days: 7

@@ -1,0 +1,26 @@
+{%- comment -%} One Atlas column. Expects `L` (a lens from _config.yml) and `notes`. {%- endcomment -%}
+{%- assign lens_count = 0 -%}
+{%- for n in notes -%}{%- if n.lenses[L.key] -%}{%- assign lens_count = lens_count | plus: 1 -%}{%- endif -%}{%- endfor -%}
+<div class="lens">
+  <div class="lens-plate"><canvas data-kind="{{ L.plate }}" data-seed="{{ L.seed }}" aria-hidden="true"></canvas></div>
+  <div class="lens-title">
+    <span><span class="lens-letter">{{ L.letter }}</span><span class="lens-name">{{ L.title }}</span></span>
+    <span class="lens-count">{% if lens_count == 1 %}one note{% else %}{{ number_words[lens_count] | default: lens_count }} notes{% endif %}</span>
+  </div>
+  <p class="lens-sub">{{ L.sub }}</p>
+  <div class="lens-list">
+    {%- assign shown = 0 -%}
+    {%- for n in notes -%}
+      {%- if n.lenses[L.key] and shown < 3 -%}
+        {%- assign shown = shown | plus: 1 %}
+    <a href="{{ n.url | relative_url }}"><em>{{ n.numeral }}.</em><span>{{ n.lenses[L.key] }}</span></a>
+      {%- endif -%}
+    {%- endfor %}
+    {%- if lens_count == 0 %}
+    <div class="lens-empty">nothing filed here yet</div>
+    {%- endif %}
+  </div>
+  {%- if lens_count > 3 %}
+  <a class="lens-more" href="#notes" data-see-all="{{ L.key }}">all {{ lens_count }} under {{ L.title | downcase }} →</a>
+  {%- endif %}
+</div>

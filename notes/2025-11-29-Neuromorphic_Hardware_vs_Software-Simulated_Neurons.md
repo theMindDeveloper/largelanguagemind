@@ -1,25 +1,37 @@
 ---
-title: Neuromorphic Neurons vs von Neumann Neurons
-layout: default
----
-# Neuromorphic Neurons vs "von Neumann Neurons"  
-**Date:** 2025-11-29
-**Last Update**: 2026-08-09
-**Topics:** neuromorphic computing, perceptron history, hardware vs software neurons, Rosenblatt’s Mark I, hardwired inference, Taalas HC1, model-specific silicon  
-**Context:** Personal reflections while reading *Why Machines Learn* (A. Ananthaswamy), exploring the origins of artificial neurons from McCulloch & Pitts to Rosenblatt’s Mark I, and comparing early hardware neurons with today’s software-based machine learning.
+layout: note
+title: "Neuromorphic Neurons vs “von Neumann Neurons”"
+numeral: I
+date: 2025-11-29
+last_update: 2026-08-09
+summary: "Why do we simulate neurons in software instead of building them in hardware? From McCulloch and Pitts to Rosenblatt’s Mark I, and on to model-specific silicon."
+standfirst: "Personal reflections while reading *Why Machines Learn* (A. Ananthaswamy), exploring the origins of artificial neurons from McCulloch & Pitts to Rosenblatt’s Mark I, and comparing early hardware neurons with today’s software-based machine learning."
+topics: [neuromorphic computing, perceptron history, Taalas HC1, hardware vs software neurons, Rosenblatt’s Mark I, hardwired inference, model-specific silicon]
+neuron:
+  type: pyramidal
+  seed: 11
+lenses:
+  brain: "Biological neurons: analog, plastic, structurally dynamic"
+  learning: "Rosenblatt’s Mark I and its potentiometer weights"
+  machine: "Taalas HC1: model weights etched into the die"
 ---
 ## Abstract  
+
 This note traces how a simple question — *why do we simulate neurons in software instead of building them directly in hardware?* — led me from McCulloch–Pitts neurons to the forgotten history of Rosenblatt’s Mark I Perceptron, arguably the first neuromorphic computer ever built, and then forward to modern neuromorphic architectures and the possibilities they open for the next era of deep learning.
 By exploring this lineage, I compare three computational paradigms:
+
 1. **Hardware neurons** — as in the Mark I Perceptron (1958)  
 2. **Software-simulated neurons** — the foundation of modern machine learning  
 3. **Neuromorphic hardware** — a modern revival of Rosenblatt’s original vision (e.g., Loihi)
+
 This contrast changed how I understand the relationship between biological intelligence, digital logic, and artificial learning systems.
 
 *(2026 update: a fourth paradigm has since appeared in commercial silicon, and Section 5 covers it in detail: hardwired, model-specific inference chips such as the Taalas HC1, where the weights of an LLM are physically etched into the transistors of the die.)*
 
 ---
-# 1. How the Question Emerged
+
+## 1. How the Question Emerged
+
 While reading about McCulloch & Pitts and their logical model of neurons, I stumbled onto an almost too-obvious realization: computers are built from logic gates, and so were the earliest artificial neurons. Modern deep learning, despite its scale and complexity, still boils down to differentiable arithmetic running on von Neumann hardware.
 That observation triggered a simple but surprisingly deep question:
 **If neurons are just circuits, why do we simulate them in software instead of building them directly in hardware?**
@@ -29,61 +41,87 @@ Both are physical, signal-processing devices.
 So why not create neural networks as hardware rather than as mathematical abstractions?  
 Why do our “neurons” live as floating-point numbers on GPUs instead of as actual circuits?
 That moment of intuition — that perhaps intelligence should be a physical architecture, not just a digital abstraction — pushed me backward into the history of Rosenblatt’s Mark I and forward into the world of modern neuromorphic computing.
+
 ---
-# 2. Rosenblatt’s Mark I — The First Neuromorphic Machine
+
+## 2. Rosenblatt’s Mark I — The First Neuromorphic Machine
+
 ![Perceptron Manual 1960](https://www.glass-bead.org/wp-content/uploads/1-Perceptron-Manual-1960-1.jpg)
 *Figure: An illustration from the 1960 Perceptron Manual, representing early hardware implementations of neural networks.*
+
 What I didn’t know is that someone *did* try to build hardware neurons — long before deep learning existed.
 In 1958, Frank Rosenblatt introduced the **Mark I Perceptron**, a machine built entirely from:
+
 - analog circuits  
 - potentiometer “weights”  
 - physical summation units  
 - threshold detectors  
 - a photosensor array as vision input  
+
 This was not a simulation.  
 It was not a program.  
 It was a **hardware neural network** — arguably the first neuromorphic computer ever created.
+
 ### Why this matters  
+
 - It had **adjustable weights** (hardware learning).  
 - It performed classification in **real-time** with almost zero latency.  
 - The computation flowed through wires exactly like signals in a biological neuron.
+
 In other words:
 **Rosenblatt tried to build a neural computer that bypassed the von Neumann architecture entirely.**
 His perceptron was not deep learning, but it was natively neural — structurally, electrically, conceptually.
+
 ### Why it died  
+
 Criticism (especially Minsky & Papert’s XOR argument), difficulty scaling analog systems, and limited hardware technology led to the decline of perceptron research.  
 The tragedy is that the world abandoned Rosenblatt’s neuromorphic direction and instead embraced the general-purpose von Neumann roadmap.  
 Neural networks moved into software, not hardware — an understandable decision at the time, but arguably a step away from biologically inspired intelligence.  
 If we ever aim for truly human- or animal-like AGI, the neuromorphic path is likely to return in a much more powerful form.
+
 ---
-# 3. Discovering Neuromorphic Computing (The Modern Revival)
+
+## 3. Discovering Neuromorphic Computing (The Modern Revival)
+
 When I searched whether anyone still builds neuron circuits today, I discovered an entire field I didn't know existed:
 **Neuromorphic computing** — the attempt to design chips whose structure and signaling resemble biological neurons.
 Examples include:
+
 - **Carver Mead’s** early analog VLSI neurons  
 - **IBM TrueNorth** — 1M hardware neurons  
 - **Intel Loihi / Loihi 2** — spiking neuromorphic processors with on-chip plasticity  
 - **BrainScaleS** — analog accelerated neuron dynamics  
 - **SpiNNaker** — digital multimillion-neuron systems  
+
 This was the exact world Rosenblatt was pointing toward — a world where the neuron itself is a hardware primitive.
+
 ---
-# 4. Three Worlds: Biological, Software, and Neuromorphic Neurons
+
+## 4. Three Worlds: Biological, Software, and Neuromorphic Neurons
+
 Through this reading, I realized we have **three different kinds of neurons**:
+
 ### **1. Biological Neurons — analog, plastic, structurally dynamic**
+
 - Synapses strengthen or weaken (LTP/LTD)  
 - New synapses form or get pruned  
 - In limited regions, new neurons can be created (not the main learning mechanism!)
 - Learning and structure are inseparable  
+
 ### **2. Modern ML Neurons — numerical, static after training**
+
 - Represented as floating-point numbers  
 - Executed on von Neumann hardware  
 - Training is software; inference is software  
 - Not plastic unless explicitly programmed  
+
 ### **3. Neuromorphic Neurons — hardware, sometimes locally plastic**
+
 - Analog or mixed-signal  
 - Spike-based (in contrast to CPUs/GPUs, which are synchronous clock-driven chips)  
 - Some support on-chip learning (like the brain's neuroplasticity!)
 - Structure fixed, but connection strengths may adapt  
+
 This helped me clarify something fundamental:
 > Deep learning is not biologically inspired at the hardware level.  
 > It only borrows the *math* of neurons, not the *physics*.
@@ -91,18 +129,20 @@ Neuromorphic computing tries to bring hardware closer to the physics of the brai
 It is extremely energy-efficient — just like biological neural tissue — while von Neumann architecture has proven itself as a flexible and general-purpose computing model.
 But for achieving highly efficient, brain-like intelligence without massive data centers, a neuroplastic, spike-based hardware architecture seems like the natural future of AI.
 On this topic, I found two dominant viewpoints: (heard this idea from Jeffrey Shainline on the Lex Fridman podcast)
+
 1. **Mathematical abstraction path:**  
    Intelligence can be represented as mathematical operations, and as long as the hardware can perform these efficiently, biologically inspired hardware structures are unnecessary.
+
 2. **Biological hardware path:**  
    To unlock new paradigms of efficiency and adaptability, we must move toward hardware that is heavily inspired by the actual physical mechanisms of the brain.
 
 ---
 
-# 5. 2026 Update: Taalas and the HC1, or What Happens When You Etch an LLM Into Metal
+## 5. 2026 Update: Taalas and the HC1, or What Happens When You Etch an LLM Into Metal
 
 *Added 2026-08-09. When I wrote the original note in late 2025, I framed the question as a two-way choice: keep the math and run it on general-purpose silicon, or rebuild the substrate along biological lines. Since then a Toronto startup called **Taalas** has demonstrated a third answer that I did not anticipate, and it turns out to sit uncomfortably close to Rosenblatt while being about as un-biological as a chip can be. It is worth going through carefully, because it sharpens exactly what my original question was really asking.*
 
-## 5.1 Who Taalas is
+### 5.1 Who Taalas is
 
 Taalas was founded in 2023 in Toronto by **Ljubisa Bajic** (CEO), **Lejla Bajic** (COO) and **Drago Ignjatovic** (CTO). All three came out of **Tenstorrent**, which Ljubisa Bajic himself founded and led before Jim Keller took over in late 2022; before that he was a GPU and APU architect at ATI, AMD and briefly NVIDIA. Paresh Kharya, previously senior director of data center product management at NVIDIA and then AI infrastructure product management at Google Cloud, joined as VP of Products.
 
@@ -110,7 +150,7 @@ The company came out of stealth on **19 February 2026** with roughly 25 employee
 
 So this is not a research curiosity. It is a working chip, and it was bought by one of the two companies that define the GPU status quo, within six months of leaving stealth.
 
-## 5.2 The core idea: Hard Coded Inference
+### 5.2 The core idea: Hard Coded Inference
 
 Taalas calls its architecture **HC, "Hard Coded Inference."** The premise is the one I circled around in Section 1, arrived at from the opposite direction:
 
@@ -122,7 +162,7 @@ The density trick, which Bajic has deliberately not fully disclosed, is this: Ta
 
 The consequence is that the memory wall, the thing that forces GPUs into HBM stacks, NVLink domains, liquid cooling and miles of copper, simply does not exist for this design. There is nothing to move.
 
-## 5.3 HC1: the actual numbers
+### 5.3 HC1: the actual numbers
 
 | Property | HC1 |
 |---|---|
@@ -140,7 +180,7 @@ For comparison on the same Llama 3.1 8B model, per Artificial Analysis and Taala
 
 Two honest caveats, which the trade press flagged and which I want to keep visible: **these benchmarks were run by Taalas itself, not by an independent lab**, and Taalas admits its Llama 3.1 8B is quantized "aggressively," which is a quality tradeoff of unstated size. There is a public demo chatbot, so the speed claim at least is user-checkable, but the accuracy claim is not yet independently characterized.
 
-## 5.4 Why this is economically possible at all: the structured-ASIC trick
+### 5.4 Why this is economically possible at all: the structured-ASIC trick
 
 The obvious objection is: a new chip per model is insane. Taalas' answer borrows from the **structured ASICs / gate arrays** of the early 2000s (Bajic explicitly names eASIC as a parallel). Everything on the die except **two metal mask layers** is fixed. Those two masks encode both the weights *and* the dataflow. Retargeting the chip to a different model therefore means a **two-mask tape-out**, not a full redesign.
 
@@ -150,7 +190,7 @@ The hard engineering problem turned out to be **verification, not design.** Beca
 
 A side effect I found delightful, and which speaks directly to my original point about software neurons: **the software stack essentially vanished.** Taalas has approximately one engineer on it, part-time. There is no kernel library, no scheduler, no graph compiler, because there is no general machine to program. The model is the machine.
 
-## 5.5 Roadmap and limits
+### 5.5 Roadmap and limits
 
 - **HC2**, the next generation, moves the SRAM onto a separate die, raising density to roughly **20B parameters per chip** in MXFP4.
 - Large models are handled by **pipeline parallelism over PCIe**. Because per-card latency is so low, they do not need to batch, which means bandwidth pressure between cards is low, which means plain PCIe suffices. This is a nice inversion of the usual scaling logic.
@@ -159,7 +199,7 @@ A side effect I found delightful, and which speaks directly to my original point
 
 TNP's summary line for the whole category is a good one: **"Model Specific Architectures."**
 
-## 5.6 The connection to everything above
+### 5.6 The connection to everything above
 
 This is where it gets interesting for the argument in Sections 1 to 4.
 
@@ -193,7 +233,7 @@ Path 2 is a genuinely new position, and it is the one that just got acquired by 
 
 Which suggests, speculatively, that the interesting long-term architecture might be a **hybrid**: a large, immutable, extremely efficient hardwired core carrying the slow-changing bulk of knowledge, wrapped in a genuinely plastic layer, whether SRAM adapters as Taalas does it today or something with real on-chip learning as Loihi does it. I want to be careful not to over-sell the biological analogy here, because it is loose, but there is at least a resemblance to the way biological systems combine relatively stable large-scale structure with fast local synaptic change. I do not think Taalas is claiming this, and I would not claim it as more than an intuition.
 
-## 5.7 Open questions and risks I want to track
+### 5.7 Open questions and risks I want to track
 
 - The performance figures are **vendor-run**. No independent Artificial Analysis measurement of the HC1 existed as of writing.
 - The **quality cost of the aggressive quantization** has not been published in the form of standard benchmark deltas.
@@ -202,13 +242,13 @@ Which suggests, speculatively, that the interesting long-term architecture might
 - **The AMD acquisition** could go either way: it could productize hardwired inference at scale, or it could quietly become a decode-side block inside a GPU roadmap, which is a much smaller idea than the one Taalas launched with.
 - Taalas has **filed around 14 patents** under Bajic and has not published architectural papers. Almost everything technical above comes from interviews rather than peer-reviewed or ISSCC-style disclosure, so treat the mechanism claims, especially the one-transistor weight-plus-multiply, as unverified externally.
 
-## 5.8 The idea I keep coming back to: a compiler that takes weights in and gives silicon out
+### 5.8 The idea I keep coming back to: a compiler that takes weights in and gives silicon out
 
 Everything in Section 5 points at one missing piece, and I think it is the actually valuable one. Taalas built a chip. But the chip is not the interesting artifact. **The interesting artifact is the toolchain that produced it.**
 
 Look again at what Bajic described: automation that goes **from model weights to RTL in about a week**, a **two-mask** customization scheme so the rest of the die never changes, a **foundry-optimal workflow** co-developed with TSMC, and a verification methodology that can simulate an entire model end to end because there is no post-tape-out escape hatch. Strip out the specific chip and what is left is a **compiler**. Its input is a `.safetensors` file. Its output is a set of mask layers.
 
-### 5.8.1 What such a compiler actually is
+#### 5.8.1 What such a compiler actually is
 
 Today's stack for running a model looks like this:
 
@@ -234,7 +274,7 @@ The layers such a compiler would need:
 6. **Backend.** Emit RTL, run synthesis and place-and-route, emit only the differential mask layers against a fixed base die.
 7. **Verification.** The hard part. Bit-exact whole-model simulation before commit, plus formal equivalence between the original graph and the synthesized dataflow. "The compiler proves your model still says the same thing" is the feature that makes the whole thing sellable.
 
-### 5.8.2 Why this is the trillion dollar shape and not the chip
+#### 5.8.2 Why this is the trillion dollar shape and not the chip
 
 Three arguments, in increasing order of how much I believe them.
 
@@ -246,7 +286,7 @@ Three arguments, in increasing order of how much I believe them.
 
 That is the vision worth stating plainly: **a chip fab in the shape of a compiler.** `model.compile(target="silicon")`. Two months later a card arrives.
 
-### 5.8.3 What is genuinely hard, and why nobody has it yet
+#### 5.8.3 What is genuinely hard, and why nobody has it yet
 
 I want to be honest about the obstacles, because the idea sounds inevitable and is not.
 
@@ -256,7 +296,7 @@ I want to be honest about the obstacles, because the idea sounds inevitable and 
 - **Foundry coupling.** This cannot be a pure software company. The backend must be co-designed with a specific process at a specific fab, which means partnership, allocation, and capacity risk. That is precisely why AMD, which has that relationship, is the natural acquirer, and why Taalas got bought within six months.
 - **Nobody wants to hand over their weights.** The single most valuable asset a frontier lab has is the checkpoint. A compiler-as-a-service requires either on-premises deployment or a trust model that does not currently exist. This is a business-model problem masquerading as a technical one, and I suspect it is why the first movers are selling chips rather than tools.
 
-### 5.8.4 Where this loops back to Rosenblatt
+#### 5.8.4 Where this loops back to Rosenblatt
 
 The reason I care about this beyond the business framing: **a model-to-silicon compiler is the general machine for building Mark I Perceptrons.**
 
@@ -269,7 +309,9 @@ And then the remaining question, the one I do not think a compiler solves and th
 That, I think, is the interesting startup. Not "we hardwire LLMs." Rather: **"you give us a model and a plasticity budget, and we give you the physics."**
 
 ---
+
 ## Conclusion
+
 I can imagine a neuromorphic chip running an LLM-like AI inside a small assistant robot on a spacecraft, powered only by compact batteries — not massive data-center servers trying to predict the next word on general-purpose GPUs. I imagine a system with true hardware-based artificial plasticity, able to adapt and update its own parameters on the fly, instead of the static, frozen-weight models we use today that rely on constantly shifting external inputs to simulate memory.
 Biological intelligence is not a piece of software — it is a physical, adaptive, constantly changing neural substrate.  
 Rosenblatt understood this, which is why the Mark I Perceptron was a machine built from neurons as hardware, not neurons as equations.  
@@ -284,20 +326,26 @@ But it is increasingly clear that the long-term future of AI — especially if w
 **Addendum, August 2026.** Taalas is the clearest evidence yet for the second half of that sentence and the clearest counter-evidence to how I got there. The industry did move the model into the substrate, it did get a large efficiency win, and it did so by ignoring biology entirely. What it gave up was adaptivity, which is the one property the brain never gives up. If I had to restate the closing line now, it would be: *intelligence is an algorithm, a substrate, and the ability to keep changing both.* Nobody has all three yet. Taalas has the substrate. Loihi has the change. GPUs have the algorithm, and the electricity bill to prove it.
 
 ---
+
 ## Disclaimer  
+
 This note reflects only my current understanding of neuromorphic computing, hardware, and machine learning at the time of writing.  
 It is not meant to be a formal academic text, and some explanations are intentionally simplified.  
 I have tried to fact-check the main claims and avoid obvious misunderstandings, but there may still be gaps or inaccuracies.  
 The purpose of this document is to track my own learning process, not to present a final or authoritative view on the topic.
 Specifically for Section 5: Taalas has not published peer-reviewed papers on its architecture, and the performance numbers cited are the company's own. Read them as claims, not as measurements.
+
 ---
+
 ## Further Material  
+
 - *Why Machines Learn: The Elegant Math Behind Modern AI* — Anil Ananthaswamy  
 - Computerphile: “Neuromorphic Computing”  
 - Fraunhofer IIS: Neuromorphic Computing Overview  
 - Architecture All Access: “Neuromorphic Computing Part 1 & 2”
 
 ### Sources for Section 5
+
 - Timothy Prickett Morgan, [*Taalas Etches AI Models Onto Transistors To Rocket Boost Inference*](https://www.nextplatform.com/compute/2026/02/19/taalas-etches-ai-models-onto-transistors-to-rocket-boost-inference/4092140), The Next Platform, 19 Feb 2026
 - Sally Ward-Foxton, [*Taalas Specializes to Extremes for Extraordinary Token Speed*](https://www.eetimes.com/taalas-specializes-to-extremes-for-extraordinary-token-speed/), EE Times, 19 Feb 2026
 - Timothy Prickett Morgan, [*With Taalas, AMD Can Bake AI Inference Directly Into Its Chippery*](https://www.nextplatform.com/compute/2026/08/07/with-taalas-amd-can-bake-ai-inference-directly-into-its-chippery/5285060), The Next Platform, 7 Aug 2026

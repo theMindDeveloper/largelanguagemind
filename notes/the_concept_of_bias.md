@@ -1,13 +1,21 @@
 ---
+layout: note
 title: "The Concept of Bias: A Baseline Mechanism for Efficient Intelligence"
-layout: default
+headline: "The Concept of Bias"
+numeral: II
 date: 2025-12-24
 last_update: 2025-12-24
-topics: [cognitive bias, epistemic priors, Bias as Compression, From Priors to Parameters]
+summary: "Bias read through several sciences at once, and the shared pattern behind priors, defaults and compression."
+standfirst: "A baseline mechanism for efficient intelligence, read through cognitive science, biology and machine learning at once."
+topics: [cognitive bias, epistemic priors, bias as compression, from priors to parameters]
+neuron:
+  type: purkinje
+  seed: 29
+lenses:
+  brain: "Bias in biology: defaults shaped by selection"
+  learning: "Bias as compression of past experience"
+  machine: "Underfitting, priors and the mis-weighting problem"
 ---
-
-# The Concept of Bias: A Baseline Mechanism for Efficient Intelligence
-
 ## Abstract
 
 In this journal, I want to examine bias through the lenses of multiple scientific fields and build a deep, unified understanding of what it really is. My goal is to arrive at a general definition that captures the shared pattern these disciplines converge on despite their different vocabularies and frameworks.
@@ -101,6 +109,7 @@ Why focus on $b$? Because it is a minimal micro-level mechanism that mirrors the
 The key property of $b$ at **inference time** is that it is **input-independent with respect to the current $x$**: it adds the same offset regardless of the present input. During **training**, $b$ is learned from data just like the weights. But once learned, it behaves like a stable baseline term-exactly the kind of “default influence” this note is tracking across domains.
 
 Intuitively:
+
 - $w \cdot x$ = “what the current evidence says”
 - $b$ = “what the neuron tends to do by default”
 
@@ -121,6 +130,7 @@ then:
 $$w \cdot x > -b$$
 
 So $-b$ is the threshold:
+
 - positive $b$ $\rightarrow$ lower threshold $\rightarrow$ easier to fire
 - negative $b$ $\rightarrow$ higher threshold $\rightarrow$ harder to fire
 
@@ -166,18 +176,21 @@ The concepts discussed in this journal specifically the functional role of bias 
 The framing here overlaps with research on bounded rationality (Simon), fast/slow cognition (Kahneman), signal detection & error management (Green & Swets; Haselton & Nettle), inductive bias (Mitchell; Bishop), and predictive processing (Clark). I’m listing these as **starting points, not claiming to have studied them in full**.
 
 ### 1. On Bounded Rationality (Why we need shortcuts)
+
 * **Simon, H. A. (1955).** *A Behavioral Model of Rational Choice.*
     * The origin of the theory that humans use shortcuts (biases) because we lack the computational power to be perfectly rational.
 * **Kahneman, D. (2011).** *Thinking, Fast and Slow.*
     * Covers the "System 1" (fast, biased) vs. "System 2" (slow, deliberative) distinction, explaining why default operations dominate everyday thought.
 
 ### 2. On Evolutionary Constraints (Why "paranoia" is useful)
+
 * **Haselton, M. G., & Nettle, D. (2006).** *The Paranoid Optimist: An Integrative Evolutionary Model of Cognitive Biases.*
     * Explores **Error Management Theory** and the "Smoke Detector Principle": why evolution often optimizes for false positives rather than perfect accuracy.
 * **Green, D. M., & Swets, J. A. (1966).** *Signal Detection Theory and Psychophysics.*
     * The foundational text on decision thresholds and the trade-off between false positives and false negatives.
 
 ### 3. On Machine Learning Mechanics
+
 * **Bishop, C. M. (2006).** *Pattern Recognition and Machine Learning.*
     * Provides the formal mathematical definition of bias parameters ($b$) in linear models and neural networks.
 * **Mitchell, T. M. (1980).** *The Need for Biases in Learning Generalizations.*

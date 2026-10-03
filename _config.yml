@@ -1,20 +1,34 @@
-title: LargeLanguageMind
+title: Large Language Mind
 description: >-
   A process-driven research journal tracing how my evolving understanding of
-  intelligence, cognition, and machine learning emerges—from intuition,
+  intelligence, cognition, and machine learning emerges, from intuition,
   cross-domain connections, and reasoning, to formal concepts.
+# Shown under the hero title on the home page.
+intro: >-
+  A process-driven research journal tracing how my understanding of
+  intelligence, cognition and machine learning emerges: from intuition,
+  cross-domain connections and reasoning, to formal concepts.
+lang: en
 
-
-theme: jekyll-theme-minimal
-
-# GitHub Pages base URL
+# Served at https://theminddev.com/largelanguagemind
 url: "https://theminddev.com"
 baseurl: "/largelanguagemind"
-
-github:
-  is_project_page: true
-  repository_url: https://github.com/theMindDeveloper/largelanguagemind
+github_repo: https://github.com/theMindDeveloper/largelanguagemind
 
 markdown: kramdown
 kramdown:
-math_engine: null
+  input: GFM
+  hard_wrap: false
+  math_engine: null
+
+# The three Atlas lenses. A note is filed under a lens by giving it a line
+# under `lenses:` in its front matter (see README.md).
+lenses:
+  - { key: brain,    letter: a, title: Brain,    plate: cortex,     seed: 7,  sub: "The organ itself: cells, folds, chemistry, evolution." }
+  - { key: learning, letter: b, title: Learning, plate: tracts,     seed: 11, sub: "How connections change with use, in tissue and in circuits." }
+  - { key: machine,  letter: c, title: Machine,  plate: connectome, seed: 5,  sub: "Graphs, weights and the silicon they run on." }
+
+exclude:
+  - README.md
+  - LICENSE
+  - assets/brand/logo-export.html

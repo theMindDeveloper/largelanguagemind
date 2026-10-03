@@ -1,0 +1,6 @@
+{%- comment -%}
+  Every page in notes/ that has a date, newest first. Sets `notes`.
+{%- endcomment -%}
+{%- assign notes = site.pages | where_exp: "p", "p.path contains 'notes/'" | where_exp: "p", "p.date" | sort: "date" | reverse -%}
+{%- assign number_words = "no,one,two,three,four,five,six,seven,eight,nine,ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen,seventeen,eighteen,nineteen,twenty" | split: "," -%}
+{%- assign romans = "I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,XVII,XVIII,XIX,XX,XXI,XXII,XXIII,XXIV,XXV,XXVI,XXVII,XXVIII,XXIX,XXX" | split: "," -%}

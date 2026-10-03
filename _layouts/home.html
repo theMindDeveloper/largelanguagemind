@@ -1,0 +1,70 @@
+---
+layout: default
+---
+{% include notes-sorted.html %}
+<div class="page">
+  <canvas class="field" data-kind="field" data-seed="3" data-neurons="1" data-op="1" aria-hidden="true"></canvas>
+
+  <header class="home-header">
+    <a class="logo-link" href="{{ '/' | relative_url }}" aria-label="Large Language Mind, home"><canvas class="logo" data-logo aria-hidden="true"></canvas></a>
+    <nav class="home-nav" aria-label="Main">
+      <a href="#notes"><sup>i</sup>notes</a>
+      <a href="#atlas"><sup>ii</sup>atlas</a>
+      <a href="{{ site.github_repo }}"><sup>iii</sup>source ↗</a>
+      <button class="theme-toggle" type="button" aria-pressed="false">lights off</button>
+    </nav>
+  </header>
+
+  <section class="hero" aria-labelledby="site-title">
+    <canvas class="hero-canvas" data-hero data-variant="5" aria-hidden="true"></canvas>
+    <div class="hero-scrim"></div>
+    <div class="hero-text">
+      <h1 class="hero-title" id="site-title">Large<br>Language<br><em>Mind</em></h1>
+      <div class="hero-intro">
+        <p>{{ site.intro }}</p>
+        <div class="smallcaps">fig. 1, in three beats</div>
+        <ol class="beats" aria-label="What the figure shows">
+          <li><span class="beat-n">i.</span><span class="beat-t">Two cells fire at the same moment, again and again.</span></li>
+          <li><span class="beat-n">ii.</span><span class="beat-t">Each time, both reach a little further toward each other.</span></li>
+          <li><span class="beat-n">iii.</span><span class="beat-t">Once they touch, the first alone fires the second. <em>After Hebb, 1949.</em></span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="atlas" class="band" aria-labelledby="atlas-title">
+    <div class="band-inner">
+      <div class="band-head">
+        <h2 id="atlas-title">Atlas</h2>
+        <p>Three lenses the journal keeps returning to. Each note is filed under one or more of them; the latest three show here, the rest are one click away.</p>
+      </div>
+      <div class="lenses">
+        {% for L in site.lenses %}{% include lens.html %}{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section id="notes" class="band band-notes" aria-labelledby="notes-title">
+    <div class="band-inner">
+      <div class="band-head">
+        <h2 id="notes-title">Notes</h2>
+        <span class="filters">
+          <span class="count">{% if notes.size == 1 %}one note{% else %}{{ number_words[notes.size] | default: notes.size }} notes{% endif %}, showing</span>
+          <button type="button" data-filter="all" aria-pressed="true">all</button>
+          {% for L in site.lenses %}<button type="button" data-filter="{{ L.key }}" aria-pressed="false">{{ L.title | downcase }}</button>
+          {% endfor %}
+        </span>
+      </div>
+
+      {% for n in notes %}{% include note-row.html %}{% endfor %}
+      <div class="no-match" hidden>Nothing filed under this lens yet.</div>
+
+      <div class="ghost-row">
+        <canvas data-thumb data-seed="47" data-ghost="1" data-type="stellate" aria-hidden="true"></canvas>
+        <span>{{ romans[notes.size] | downcase }}. not written yet, a new cell will grow here</span>
+      </div>
+    </div>
+  </section>
+
+  {% include footer.html %}
+</div>

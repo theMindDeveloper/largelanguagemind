@@ -1,0 +1,13 @@
+{%- comment -%} One row in the Notes list. Expects `n` (a note page). {%- endcomment -%}
+{%- capture lens_keys -%}{%- for L in site.lenses -%}{%- if n.lenses[L.key] -%}{{ L.key }} {% endif -%}{%- endfor -%}{%- endcapture -%}
+<a class="note-row" href="{{ n.url | relative_url }}" data-lenses="{{ lens_keys | strip }}">
+  <canvas data-thumb data-seed="{{ n.neuron.seed | default: 1 }}" data-type="{{ n.neuron.type | default: 'pyramidal' }}" aria-hidden="true"></canvas>
+  <div class="note-body">
+    <div class="note-head">
+      <span class="note-title"><em>{{ n.numeral }}.</em>{{ n.title }}</span>
+      <span class="note-date">{{ n.date | date: "%-d %b %Y" }}{% if n.last_update %}{% assign d1 = n.date | date: "%Y-%m-%d" %}{% assign d2 = n.last_update | date: "%Y-%m-%d" %}{% if d1 != d2 %}, revised {{ n.last_update | date: "%b %Y" }}{% endif %}{% endif %}</span>
+    </div>
+    {% if n.summary %}<span class="note-summary">{{ n.summary }}</span>{% endif %}
+    {% if n.topics %}<span class="note-filed">filed under {% for t in n.topics limit: 3 %}{{ t }}{% unless forloop.last %}, {% endunless %}{% endfor %}</span>{% endif %}
+  </div>
+</a>
